@@ -1,5 +1,7 @@
 ![mosaic.jpg](media/mosaic.jpg)
 ## DarkNet_ChineseTrading - 暗网中文网监控实时爬虫
+![](https://img.shields.io/badge/language-python3-orange.svg)
+![](https://img.shields.io/badge/platform-mac|lunix|window-orange.svg)
 
 
 ## 监控大屏(grafana快速实现)
