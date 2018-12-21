@@ -1,0 +1,12 @@
+peewee==3.6.0
+retry==0.9.2
+termcolor==1.1.0
+selenium==3.11.0
+pyquery==1.4.0
+telepot==12.7
+requests==2.21.0
+celery==3.1.26.post2
+PyMySQL==0.9.2
+moment==0.8.2
+stem==1.6.0
+progressbar2==3.39.2

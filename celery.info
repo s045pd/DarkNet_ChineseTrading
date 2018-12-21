@@ -1,0 +1,56 @@
+[2018-12-21 19:11:06,734: WARNING/MainProcess] /Users/s045pd/anaconda3/lib/python3.6/site-packages/celery/apps/worker.py:161: CDeprecationWarning: 
+Starting from version 3.2 Celery will refuse to accept pickle by default.
+
+The pickle serializer is a security concern as it may give attackers
+the ability to execute any command.  It's important to secure
+your broker from unauthorized access when using pickle, so we think
+that enabling pickle should require a deliberate action and not be
+the default choice.
+
+If you depend on pickle then you should set a setting to disable this
+warning and to be sure that everything will continue working
+when you upgrade to Celery 3.2::
+
+    CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
+
+You must only enable the serializers that you will actually use.
+
+
+  warnings.warn(CDeprecationWarning(W_PICKLE_DEPRECATED))
+[2018-12-21 19:11:06,923: INFO/Beat] beat: Starting...
+[2018-12-21 19:11:06,938: INFO/MainProcess] Connected to redis://127.0.0.1:32772//
+[2018-12-21 19:11:06,964: INFO/MainProcess] mingle: searching for neighbors
+[2018-12-21 19:11:07,977: INFO/MainProcess] mingle: all alone
+[2018-12-21 19:11:08,016: WARNING/MainProcess] celery@s045pd.local ready.
+[2018-12-21 19:11:08,269: INFO/MainProcess] Received task: task.telegram[a02718a9-f72f-4afd-8a4c-ab30ba3f6928]
+[2018-12-21 19:11:08,276: INFO/MainProcess] Received task: task.telegram[2597b414-17b5-4aef-a97c-d420ef511d5b]
+[2018-12-21 19:11:08,277: INFO/MainProcess] Task task.telegram[a02718a9-f72f-4afd-8a4c-ab30ba3f6928] succeeded in 0.004513018007855862s: None
+[2018-12-21 19:11:08,280: INFO/MainProcess] Received task: task.telegram[2322b3f6-3844-4ae9-8f5c-35fb74a36960]
+[2018-12-21 19:11:08,281: INFO/MainProcess] Task task.telegram[2597b414-17b5-4aef-a97c-d420ef511d5b] succeeded in 0.003269192995503545s: None
+[2018-12-21 19:11:08,283: INFO/MainProcess] Received task: task.telegram[a24ba579-dfe1-4f88-b1d3-1f5d833f1174]
+[2018-12-21 19:11:08,287: INFO/MainProcess] Received task: task.telegram[8c7d4a10-5b6e-4e71-b94b-bfda0ca81217]
+[2018-12-21 19:11:08,287: INFO/MainProcess] Task task.telegram[2322b3f6-3844-4ae9-8f5c-35fb74a36960] succeeded in 0.004995528011932038s: None
+[2018-12-21 19:11:08,290: INFO/MainProcess] Received task: task.telegram[08de5248-c495-444b-b988-5660a65d8485]
+[2018-12-21 19:11:08,292: INFO/MainProcess] Task task.telegram[a24ba579-dfe1-4f88-b1d3-1f5d833f1174] succeeded in 0.006678406993160024s: None
+[2018-12-21 19:11:08,293: INFO/MainProcess] Task task.telegram[8c7d4a10-5b6e-4e71-b94b-bfda0ca81217] succeeded in 0.004316049991757609s: None
+[2018-12-21 19:11:08,296: INFO/MainProcess] Received task: task.telegram[23951936-7796-43c7-b8cf-87569ef8e641]
+[2018-12-21 19:11:08,296: INFO/MainProcess] Task task.telegram[08de5248-c495-444b-b988-5660a65d8485] succeeded in 0.002901225001551211s: None
+[2018-12-21 19:11:08,299: INFO/MainProcess] Received task: task.telegram[9cd5b826-7463-4139-935d-f43c7abd215b]
+[2018-12-21 19:11:08,300: INFO/MainProcess] Task task.telegram[23951936-7796-43c7-b8cf-87569ef8e641] succeeded in 0.0028951779968338087s: None
+[2018-12-21 19:11:08,306: INFO/MainProcess] Received task: task.telegram[a7c6e6d3-8d94-4428-9435-8f0e27e09a0b]
+[2018-12-21 19:11:08,306: INFO/MainProcess] Task task.telegram[9cd5b826-7463-4139-935d-f43c7abd215b] succeeded in 0.005773500000941567s: None
+[2018-12-21 19:11:08,311: INFO/MainProcess] Received task: task.telegram[5e374b0a-ff8c-4596-9cf2-489cd551c323]
+[2018-12-21 19:11:08,311: INFO/MainProcess] Task task.telegram[a7c6e6d3-8d94-4428-9435-8f0e27e09a0b] succeeded in 0.004553589998977259s: None
+[2018-12-21 19:11:08,314: INFO/MainProcess] Received task: task.telegram[e0d72faf-1119-4e8f-bb4d-12005513caa8]
+[2018-12-21 19:11:08,315: INFO/MainProcess] Task task.telegram[5e374b0a-ff8c-4596-9cf2-489cd551c323] succeeded in 0.0025592599995434284s: None
+[2018-12-21 19:11:08,317: INFO/MainProcess] Received task: task.telegram[806d73c6-90ee-4850-a9fc-192c410fd32a]
+[2018-12-21 19:11:08,318: INFO/MainProcess] Task task.telegram[e0d72faf-1119-4e8f-bb4d-12005513caa8] succeeded in 0.0033826870057964697s: None
+[2018-12-21 19:11:08,320: INFO/MainProcess] Received task: task.telegram[58c2fa54-05c4-4696-a091-196d1756f7ef]
+[2018-12-21 19:11:08,323: INFO/MainProcess] Received task: task.telegram[1824b9dc-f717-4c52-a01e-616abefd71ce]
+[2018-12-21 19:11:08,324: INFO/MainProcess] Task task.telegram[806d73c6-90ee-4850-a9fc-192c410fd32a] succeeded in 0.0053214619983918965s: None
+[2018-12-21 19:11:08,325: INFO/MainProcess] Task task.telegram[58c2fa54-05c4-4696-a091-196d1756f7ef] succeeded in 0.0030969100043876097s: None
+[2018-12-21 19:11:08,326: INFO/MainProcess] Task task.telegram[1824b9dc-f717-4c52-a01e-616abefd71ce] succeeded in 0.0012870819919044152s: None
+[2018-12-21 19:48:55,154: INFO/MainProcess] Received task: task.telegram[be6f3e89-c454-4394-b83b-975122958695]
+[2018-12-21 19:48:55,201: INFO/MainProcess] Task task.telegram[be6f3e89-c454-4394-b83b-975122958695] succeeded in 0.011728666999260895s: None
+[2018-12-21 20:37:25,369: INFO/MainProcess] Received task: task.telegram[22834bbe-3027-4c18-b4a2-35c85e1e1533]
+[2018-12-21 20:37:25,416: INFO/MainProcess] Task task.telegram[22834bbe-3027-4c18-b4a2-35c85e1e1533] succeeded in 0.02085258500301279s: None

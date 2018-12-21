@@ -66,7 +66,6 @@ class DarkNet_ChineseTradingNetwork(object):
             "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
             "Cache-Control": "max-age=0",
             "Connection": "keep-alive",
-            "Host": "bmp3qqimv55xdznb.onion",
             "Referer": "http://bmp3qqimv55xdznb.onion/index.php",
             "Upgrade-Insecure-Requests": "1",
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36"
@@ -232,7 +231,6 @@ class DarkNet_ChineseTradingNetwork(object):
             self.report('Auth Success')
             self.types = {item('.index_list_title').attr('href').split('=')[1].split('&')[0]: item('tr:nth-child(1) > td').text(
             ).split()[0] for item in jq(resp.text)('.ad_table_b').items()}
-            del self.types['10001']
             self.report(self.types)
 
     def SaveError(self, filename, resp):
