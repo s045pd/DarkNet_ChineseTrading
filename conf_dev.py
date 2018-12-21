@@ -6,7 +6,7 @@ class ConfigDev:
     mysql_db = 'db'
 
     redis_host = '127.0.0.1'
-    redis_port = 3672
+    redis_port = 6379
 
     telegram_proxy = None
     telegram_token = "xxxxxxxxxxxxxxxxxxx"

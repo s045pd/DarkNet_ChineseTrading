@@ -2,12 +2,20 @@
 ## DarkNet_ChineseTrading - 暗网中文网监控实时爬虫
 
 
-## 监控大屏
+## 监控大屏(grafana快速实现)
 ![](media/grafana.png)
 
 
-## 安装(Mac下)
+## 功能
 
+- 自动注册
+- 自动登录
+- 防封禁
+- ORM交互
+- 事件详情/样本信息录入
+- 事件提醒（telegram）
+
+## 安装(Mac下)
 
 - ### python环境配置
 
@@ -15,7 +23,6 @@
 
 	```
 	pip install -r ./requirements.txt
-		
 	```
 	
 - ### tor安装
@@ -27,7 +34,7 @@
 	cp torrc.sample ./torrc
 	vi torrc
 	```
-	将如下配置添加到**```torrc```**后，运行**```restart_tor.sh```**开启tor
+	将如下配置添加到 ** ```torrc``` ** 后，运行 ** ```restart_tor.sh``` ** 开启tor
 	
 	```
 	SOCKSPort 9150 					# socks5代理地址
@@ -54,6 +61,16 @@
 - ### 运行逻辑
 	
 	![](media/DarkNet.png)
+	
+- ### 运行结果截图
+
+	- #### telegram
+		
+		![](media/telegram.png)
+		
+	- #### ```run.py```
+	
+		![](media/run.png)
 	
 	
 	

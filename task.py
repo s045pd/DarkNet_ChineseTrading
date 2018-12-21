@@ -48,7 +48,13 @@ def CreatePhantomjsSession(proxy_url):
 
 telepot.api.set_proxy(Config.telegram_proxy)
 bot = telepot.Bot(Config.telegram_token)
+print(bot.getMe())
 Rooms = bot.getUpdates()
+print(Rooms)
+# {'id': 716813065, 'is_bot': True, 'first_name': 'worker',
+#     'username': 'darknetspiderbot'}
+# [{'update_id': 829405815, 'channel_post': {'message_id': 66, 'chat': {'id': -1001391909074, 'title': 'DarkNetChinese',
+#                                                                       'username': 'fordarknetspiderbot', 'type': 'channel'}, 'date': 1545401041, 'text': 'test'}}]
 app = Celery(
     'darknet', broker=f'redis://{Config.redis_host}:{Config.redis_port}//')
 

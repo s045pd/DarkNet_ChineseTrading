@@ -415,13 +415,14 @@ class DarkNet_ChineseTradingNetwork(object):
 
     def Run(self):
         self.InitAdd(DefaultLIST)
-        self.CheckIfNeedLogin(None, True, False)
-        for qeaid, name in self.types.items():
-            maxpage = self.GetTypeDatas(qeaid, name)
-            self.info(f"MaxPage: {maxpage}")
-            for page in range(1, maxpage):
-                if not self.GetTypeDatas(qeaid, name, page):
-                    break
+        while True:
+            self.CheckIfNeedLogin(None, True, False)
+            for qeaid, name in self.types.items():
+                maxpage = self.GetTypeDatas(qeaid, name)
+                self.info(f"MaxPage: {maxpage}")
+                for page in range(1, maxpage):
+                    if not self.GetTypeDatas(qeaid, name, page):
+                        break
 
 
 if __name__ == "__main__":
