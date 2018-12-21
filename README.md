@@ -2,6 +2,9 @@
 ## DarkNet_ChineseTrading - 暗网中文网监控实时爬虫
 
 
+## 监控大屏
+![](media/grafana.png)
+
 
 ## 安装(Mac下)
 
