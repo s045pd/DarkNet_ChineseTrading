@@ -390,7 +390,7 @@ class DarkNet_ChineseTradingNetwork(object):
         msg = f'[{details.uptime}] {details.title} ${details.priceUSDT}'
         self.report(msg)
         if moment.date(details.uptime) > moment.now().replace(hours=0, minutes=0, seconds=0).add(days=self.noticerange):
-            telegram.delay('DarkNetChinese', msg, sid)
+            telegram.delay(msg, sid, Config.darknetchannelID)
 
     @staticmethod
     def RandomKey(length=20):

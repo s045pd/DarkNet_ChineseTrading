@@ -48,9 +48,7 @@ def CreatePhantomjsSession(proxy_url):
 
 telepot.api.set_proxy(Config.telegram_proxy)
 bot = telepot.Bot(Config.telegram_token)
-print(bot.getMe())
-Rooms = bot.getUpdates()
-print(Rooms)
+# Rooms = bot.getUpdates()
 # {'id': 716813065, 'is_bot': True, 'first_name': 'worker',
 #     'username': 'darknetspiderbot'}
 # [{'update_id': 829405815, 'channel_post': {'message_id': 66, 'chat': {'id': -1001391909074, 'title': 'DarkNetChinese',
@@ -82,16 +80,12 @@ ToendJS = """
 
 
 @app.task()
-def telegram(channelname, msg, sid):
-    for item in Rooms:
-        roomchat = item['channel_post']['chat']
-        if channelname == roomchat['title'] and DarkNet_Notice.select().where(DarkNet_Notice.sid == sid):
-            rid = roomchat['id']
-            bot.sendMessage(rid, msg)
-            query = DarkNet_Notice.update({
-                'telegram': True
-            }).where(DarkNet_Notice.sid == sid)
-            query.execute()
+def telegram(msg, sid,rid):
+    bot.sendMessage(rid, msg)
+    query = DarkNet_Notice.update({
+        'telegram': True
+    }).where(DarkNet_Notice.sid == sid)
+    query.execute()
 
 
 @app.task()
