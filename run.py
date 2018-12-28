@@ -342,12 +342,13 @@ class DarkNet_ChineseTradingNetwork(object):
                 notice = notice[0].sid
             
             detailImages = None
+            detailContent = ' '.join(jqdata('.postbody .content').text().split())
             if not img:
                 urls = [_.attr('src') for _ in jqdata('.postbody img').items()]
                 img = DarkNet_IMGS.create(**{
                     "sid": sid,
                     "img": urls,
-                    "detail": ' '.join(jqdata('.postbody .content').text().split()) 
+                    "detail": detailContent 
                 })
                 detailImages = self.SavePics(urls, sid)
             else:
@@ -388,7 +389,7 @@ class DarkNet_ChineseTradingNetwork(object):
                     "notice": notice
                 })
                 details = DarkNet_DataSale.create(**detailsDatas)
-                self.MakeMsg(details,img.detail,detailImages, sid)
+                self.MakeMsg(details,detailContent,detailImages, sid)
             else:
                 self.warn(f'-{RealUpTime}- {muti["title"]}' )
                 DarkNet_DataSale.update(detailsDatas).where(
