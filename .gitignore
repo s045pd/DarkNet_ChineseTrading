@@ -3,7 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-celery.info
+*.info
 # C extensions
 *.so
 
