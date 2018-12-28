@@ -270,3 +270,39 @@ You must only enable the serializers that you will actually use.
 [2018-12-23 23:15:33,298: INFO/MainProcess] mingle: searching for neighbors
 [2018-12-23 23:15:34,320: INFO/MainProcess] mingle: all alone
 [2018-12-23 23:15:34,351: WARNING/MainProcess] celery@s045pd.local ready.
+[2018-12-28 17:42:32,329: WARNING/MainProcess] /Users/s045pd/anaconda3/lib/python3.6/site-packages/celery/apps/worker.py:161: CDeprecationWarning: 
+Starting from version 3.2 Celery will refuse to accept pickle by default.
+
+The pickle serializer is a security concern as it may give attackers
+the ability to execute any command.  It's important to secure
+your broker from unauthorized access when using pickle, so we think
+that enabling pickle should require a deliberate action and not be
+the default choice.
+
+If you depend on pickle then you should set a setting to disable this
+warning and to be sure that everything will continue working
+when you upgrade to Celery 3.2::
+
+    CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
+
+You must only enable the serializers that you will actually use.
+
+
+  warnings.warn(CDeprecationWarning(W_PICKLE_DEPRECATED))
+[2018-12-28 17:42:32,493: INFO/Beat] beat: Starting...
+[2018-12-28 17:42:32,499: INFO/MainProcess] Connected to redis://127.0.0.1:32768//
+[2018-12-28 17:42:32,516: INFO/MainProcess] mingle: searching for neighbors
+[2018-12-28 17:42:33,523: INFO/MainProcess] mingle: all alone
+[2018-12-28 17:42:33,541: WARNING/MainProcess] celery@s045pd.local ready.
+[2018-12-28 17:42:33,800: INFO/MainProcess] Received task: task.logreport[90f31b07-2a94-491a-a8ec-e78a39726e2a]
+[2018-12-28 17:42:33,805: INFO/MainProcess] Received task: task.logreport[4edd3c72-7c1f-4f28-b94a-83934c9e0112]
+[2018-12-28 17:42:33,810: INFO/MainProcess] Received task: task.telegram[0e728c68-2be7-4c01-9398-ee0277908b46]
+[2018-12-28 17:42:35,365: INFO/MainProcess] Task task.logreport[90f31b07-2a94-491a-a8ec-e78a39726e2a] succeeded in 1.5612899209999966s: None
+[2018-12-28 17:42:35,367: INFO/MainProcess] Task task.logreport[4edd3c72-7c1f-4f28-b94a-83934c9e0112] succeeded in 1.5578262429999938s: None
+[2018-12-28 17:42:35,370: INFO/MainProcess] Task task.telegram[0e728c68-2be7-4c01-9398-ee0277908b46] succeeded in 1.557647017999983s: None
+[2018-12-28 17:43:13,957: INFO/MainProcess] Received task: task.logreport[bd3b827a-e87a-4115-84f9-49dd99335176]
+[2018-12-28 17:43:15,473: INFO/MainProcess] Task task.logreport[bd3b827a-e87a-4115-84f9-49dd99335176] succeeded in 1.5149649150000073s: None
+[2018-12-28 17:44:03,119: INFO/MainProcess] Received task: task.telegram[c136e765-33e6-4bea-8177-b99961335f6a]
+[2018-12-28 17:44:04,563: INFO/MainProcess] Received task: task.telegram[de14c454-dc35-40cb-b329-71ce21ee759d]
+[2018-12-28 17:44:04,633: INFO/MainProcess] Task task.telegram[c136e765-33e6-4bea-8177-b99961335f6a] succeeded in 1.5127047510000011s: None
+[2018-12-28 17:44:06,133: INFO/MainProcess] Task task.telegram[de14c454-dc35-40cb-b329-71ce21ee759d] succeeded in 1.5680386129999988s: None

@@ -11,6 +11,7 @@ class ConfigDev:
     telegram_proxy = None
     telegram_token = "xxxxxxxxxxxxxxxxxxx"
     darknetchannelID = '-100000000000'
+    ReportGroupID = ''
 
     tor_proxy = "socks5h://127.0.0.1:9150"
 

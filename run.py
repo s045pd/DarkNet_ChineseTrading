@@ -24,7 +24,8 @@ from termcolor import colored
 from conf import Config
 from model import (DarkNet_DataSale, DarkNet_IMGS, DarkNet_Notice,
                    DarkNet_Saler, DarkNet_User, DarkNetWebSites)
-from task import UpdateImages, telegram
+from task import telegram,logreport
+
 
 TYPES = 'ChineseTradingNetwork'
 logging.basicConfig(
@@ -131,7 +132,7 @@ class DarkNet_ChineseTradingNetwork(object):
         finally:
             target.save()
 
-    @retry(delay=1)
+    @retry(delay=2,tries=20)
     def Reg(self):
         self.warn('Start Regging')
         headers = {
@@ -167,6 +168,9 @@ class DarkNet_ChineseTradingNetwork(object):
         step2 = jq(step2resp.text)
         token = step2('input[name="form_token"]').attr('value')
         creation_time = step2('input[name="creation_time"]').attr('value')
+        qa_answer = re.findall('请在右边框中输入： (.*?)：</label>',step2resp.text)[0]
+        self.report(f'Got answer: {qa_answer}')
+        qa_confirm_id = step2('#qa_confirm_id').attr('value') 
 
         self.usr = self.RandomKey()
         self.pwd = self.RandomKey()
@@ -181,6 +185,8 @@ class DarkNet_ChineseTradingNetwork(object):
             "tz": "Asia/Hong_Kong",
             "agreed": "true",
             "change_lang": "0",
+            "qa_answer":qa_answer,
+            "qa_confirm_id":qa_confirm_id,
             "submit": " 用户名与密码已填好,+点此提交 ",
             "creation_time": creation_time,
             "form_token": token
@@ -197,7 +203,7 @@ class DarkNet_ChineseTradingNetwork(object):
             self.error(jq(resp.text).text())
             self.SaveError('reg.html', resp)
 
-    @retry(delay=1)
+    @retry(delay=2,tries=20)
     def Login(self):
         """
             ### 再次尝试
@@ -286,6 +292,13 @@ class DarkNet_ChineseTradingNetwork(object):
             """
             self.Reg()
 
+        elif "您的回答不正确" in resp.text:
+            time.sleep(20)
+            self.Reg()
+
+    def NewNet(self):
+        pass
+
     # @retry((requests.exceptions.ConnectionError, ValueError))
     @retry((requests.exceptions.ConnectionError))
     def GetDetails(self, url, muti):
@@ -350,7 +363,7 @@ class DarkNet_ChineseTradingNetwork(object):
             RealUpTimeJQ.remove('span')
             RealUpTime = moment.date(
                 RealUpTimeJQ.text().replace('年', '').replace('月', '').replace('日', ''))
-            RealUpTime = RealUpTime if RealUpTime._date  else toCurrentYearDateTime
+            RealUpTime = RealUpTime if RealUpTime._date else toCurrentYearDateTime
             detailsDatas = {
                 "lasttime": moment.date(f"{currentYear} "+jqdetail('tr:nth-child(7) > td:nth-child(6)').text()).format('YYYY-MM-DD HH:mm:ss'),
                 "priceBTC": float(jqdetail('tr:nth-child(3) > td:nth-child(4) > span').text()),
@@ -426,9 +439,11 @@ class DarkNet_ChineseTradingNetwork(object):
 
 
 if __name__ == "__main__":
-    try:
-        DarkNet_ChineseTradingNetwork().Run()
-    except KeyboardInterrupt:
-        pass
-    except Exception as e:
-        raise
+    while True:
+        try:
+            DarkNet_ChineseTradingNetwork().Run()
+        except KeyboardInterrupt:
+            break 
+        except Exception as e:
+            logreport.delay(str(e))
+            time.sleep(10*60)

@@ -56,7 +56,7 @@
 	```
 	mv config_dev.py config.py
 	bash restart_tor.sh
-	bash restart_celery.sh
+	bash restart_task.sh
 	python run.py
 	```
 	
