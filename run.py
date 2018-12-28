@@ -20,11 +20,11 @@ from peewee import fn
 from pyquery import PyQuery as jq
 from retry import retry
 from termcolor import colored
-
+from io import BytesIO
 from conf import Config
 from model import (DarkNet_DataSale, DarkNet_IMGS, DarkNet_Notice,
                    DarkNet_Saler, DarkNet_User, DarkNetWebSites)
-from task import telegram,logreport
+from task import telegram,logreport,telegram_withpic
 
 
 TYPES = 'ChineseTradingNetwork'
@@ -306,7 +306,6 @@ class DarkNet_ChineseTradingNetwork(object):
         resp.encoding = "utf8"
         self.CheckIfNeedLogin(resp)
         jqdata = jq(resp.text)
-
         jqdetail = jqdata('.v_table_1')
         jqperson = jqdata('.v_table_2')
 
@@ -341,15 +340,16 @@ class DarkNet_ChineseTradingNetwork(object):
                 notice = DarkNet_Notice.create(**{"sid": sid})
             else:
                 notice = notice[0].sid
-
+            
+            detailImages = None
             if not img:
                 urls = [_.attr('src') for _ in jqdata('.postbody img').items()]
                 img = DarkNet_IMGS.create(**{
                     "sid": sid,
                     "img": urls,
-                    "detail": ' '.join(jqdata('.postbody').text().split())
+                    "detail": ' '.join(jqdata('.postbody .content').text().split()) 
                 })
-                self.SavePics(urls, sid)
+                detailImages = self.SavePics(urls, sid)
             else:
                 img = img[0].sid
 
@@ -388,7 +388,7 @@ class DarkNet_ChineseTradingNetwork(object):
                     "notice": notice
                 })
                 details = DarkNet_DataSale.create(**detailsDatas)
-                self.MakeTextMsg(details, sid)
+                self.MakeMsg(details,img.detail,detailImages, sid)
             else:
                 self.warn(f'-{RealUpTime}- {muti["title"]}' )
                 DarkNet_DataSale.update(detailsDatas).where(
@@ -399,11 +399,16 @@ class DarkNet_ChineseTradingNetwork(object):
             self.SaveError("error_264.html", resp)
             raise
 
-    def MakeTextMsg(self, details, sid):
-        msg = f'[{details.uptime}] {details.title} ${details.priceUSDT}'
+
+    def MakeMsg(self, details, content,imgs ,sid):
+        msg = f'[{details.uptime}]\n{details.title}\n\nPrice:${details.priceUSDT}\n\n\n${content}'
+        msg = msg if len(msg)<1000 else msg[:997] + '...'
         self.report(msg)
         if moment.date(details.uptime) > moment.now().replace(hours=0, minutes=0, seconds=0).add(days=self.noticerange):
-            telegram.delay(msg, sid, Config.darknetchannelID)
+            if not imgs:
+                telegram.delay(msg, sid, Config.darknetchannelID)
+            else:
+                telegram_withpic(imgs[0],msg,sid,Config.darknetchannelID)
 
     @staticmethod
     def RandomKey(length=20):
@@ -422,9 +427,13 @@ class DarkNet_ChineseTradingNetwork(object):
         return self.session.get(link).content
 
     def SavePics(self, urls, sid):
+        imageBox = []
         for index, url in enumerate(filter(lambda url: 'http' in url, urls)):
             with open(f'{self.screenpath}/{sid}_{index}.png', 'wb') as imgfile:
-                imgfile.write(self.GetPic(url))
+                singelPIC = self.GetPic(url)
+                imgfile.write(singelPIC)
+                imageBox.append(BytesIO(singelPIC))
+        return imageBox
 
     def Run(self):
         self.InitAdd(DefaultLIST)

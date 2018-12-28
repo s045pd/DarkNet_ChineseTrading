@@ -28,6 +28,15 @@ def telegram(msg, sid,rid):
     }).where(DarkNet_Notice.sid == sid)
     query.execute()
 
+
+@app.task()
+def telegram_withpic(pic,details,sid,rid):
+    bot.sendPhoto(rid,pic,details)
+    query = DarkNet_Notice.update({
+          'telegram': True
+     }).where(DarkNet_Notice.sid == sid)
+    query.execute()
+
 @app.task()
 def logreport(msg):
     bot.sendMessage(Config.ReportGroupID,msg)
