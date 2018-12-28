@@ -8,6 +8,7 @@
 ![](media/grafana.png)
 
 
+
 ## 功能
 
 - 自动注册
@@ -16,6 +17,8 @@
 - ORM交互
 - 事件详情/样本信息录入
 - 事件提醒（telegram）[图文]
+
+加入我们：[https://t.me/fordarknetspiderbot](https://t.me/fordarknetspiderbot)
 
 ## 安装(Mac下)
 
