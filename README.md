@@ -15,7 +15,7 @@
 - 防封禁
 - ORM交互
 - 事件详情/样本信息录入
-- 事件提醒（telegram）
+- 事件提醒（telegram）[图文]
 
 ## 安装(Mac下)
 
@@ -36,7 +36,7 @@
 	cp torrc.sample ./torrc
 	vi torrc
 	```
-	将如下配置添加到 ** ```torrc``` ** 后，运行 ** ```restart_tor.sh``` ** 开启tor
+	将如下配置添加到 **```torrc```** 后，运行 **```restart_tor.sh```** 开启tor
 	
 	```
 	SOCKSPort 9150 					# socks5代理地址
@@ -58,6 +58,8 @@
 	bash restart_tor.sh
 	bash restart_task.sh
 	python run.py
+	
+	# python tor_ctl.py #定时tor节点切换
 	```
 	
 - ### 运行逻辑
@@ -68,7 +70,7 @@
 
 	- #### telegram
 		
-		![](media/telegram.png)
+		![](media/newtg.png)
 		
 	- #### ```run.py```
 	
