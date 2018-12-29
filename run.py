@@ -434,6 +434,7 @@ class DarkNet_ChineseTradingNetwork(object):
         imageBox = []
         for index, url in enumerate(urls):
             url = url if 'http' in url else urljoin(f'http://{self.domain}',url) 
+            self.info(f'---fetch PIC[{index}]:{url}')
             with open(f'{self.screenpath}/{sid}_{index}.png', 'wb') as imgfile:
                 singelPIC = self.GetPic(url)
                 imgfile.write(singelPIC)
