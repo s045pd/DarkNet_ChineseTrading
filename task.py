@@ -31,6 +31,7 @@ def telegram(msg, sid,rid):
 
 @app.task()
 def telegram_withpic(pic,details,sid,rid):
+    # bot.sendDocument(rid,pic,details) # unpretty~
     bot.sendPhoto(rid,pic,details)
     query = DarkNet_Notice.update({
           'telegram': True

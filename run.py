@@ -324,10 +324,11 @@ class DarkNet_ChineseTradingNetwork(object):
                 "totalsales": float(jqperson('tr:nth-child(5) > td:nth-child(4)').text()),
                 "totalbuys": float(jqperson('tr:nth-child(7) > td:nth-child(4)').text())
             }
+            username = jqperson('tr:nth-child(3) > td:nth-child(2)').text()
             if not person:
                 personDatas.update({
                     "uid": uid,
-                    "user": jqperson('tr:nth-child(3) > td:nth-child(2)').text(),
+                    "user": username,
                     "regtime": moment.date(jqperson('tr:nth-child(7) > td:nth-child(2)').text()).format('YYYY-MM-DD'),
                 })
                 person = DarkNet_Saler.create(**personDatas)
@@ -389,7 +390,7 @@ class DarkNet_ChineseTradingNetwork(object):
                     "notice": notice
                 })
                 details = DarkNet_DataSale.create(**detailsDatas)
-                self.MakeMsg(details,detailContent,detailImages, sid)
+                self.MakeMsg(details,detailContent,detailImages, sid,username)
             else:
                 self.warn(f'-{RealUpTime}- {muti["title"]}' )
                 DarkNet_DataSale.update(detailsDatas).where(
@@ -401,11 +402,13 @@ class DarkNet_ChineseTradingNetwork(object):
             raise
 
 
-    def MakeMsg(self, details, content,imgs ,sid):
-        msg = f'[{details.uptime}]\n{details.title}\n\nPrice:${details.priceUSDT}\n\n\n${content}'
+    def MakeMsg(self, details, content,imgs ,sid,username):
+        shortmsg = f'[{details.uptime}] {details.title}'
+        self.report(shortmsg)
+
+        msg = f'{details.uptime}\n🔥{details.title}\n\nAuthor: {username}\nPrice: ${details.priceUSDT}\n\n\n${content}\n'
         msg = msg if len(msg)<1000 else msg[:997] + '...'
-        self.report(msg)
-        if moment.date(details.uptime) > moment.now().replace(hours=0, minutes=0, seconds=0).add(days=self.noticerange):
+        if moment.date(details.uptime) > moment.now().replace(hours=0, minutes=0, seconds=0).add(days=self.noticerange) or Config.sendForTest:
             if not imgs:
                 telegram.delay(msg, sid, Config.darknetchannelID)
             else:
@@ -429,7 +432,8 @@ class DarkNet_ChineseTradingNetwork(object):
 
     def SavePics(self, urls, sid):
         imageBox = []
-        for index, url in enumerate(filter(lambda url: 'http' in url, urls)):
+        for index, url in enumerate(urls):
+            url = url if 'http' in url else urljoin(f'http://{self.domain}',url) 
             with open(f'{self.screenpath}/{sid}_{index}.png', 'wb') as imgfile:
                 singelPIC = self.GetPic(url)
                 imgfile.write(singelPIC)

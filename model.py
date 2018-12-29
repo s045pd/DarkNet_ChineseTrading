@@ -6,6 +6,7 @@ import pymysql
 from peewee import *
 
 from conf import Config
+from peewee import __exception_wrapper__
 
 Links = {
     'host': Config.mysql_host,
@@ -27,9 +28,29 @@ except pymysql.err.ProgrammingError as e:
 except Exception as e:
     raise e
 
+ 
+class RetryOperationalError(object):
+ 
+    def execute_sql(self, sql, params=None, commit=True):
+        try:
+            cursor = super(RetryOperationalError, self).execute_sql(
+                sql, params, commit)
+        except OperationalError:
+            if not self.is_closed():
+                self.close()
+            with __exception_wrapper__:
+                cursor = self.cursor()
+                cursor.execute(sql, params or ())
+                if commit and not self.in_transaction():
+                    self.commit()
+        return cursor
+
+class RetryMySQLDatabase(RetryOperationalError, MySQLDatabase):
+    pass
+
 
 Links['database'] = Config.mysql_db
-db = MySQLDatabase(**Links, charset='utf8mb4')
+db = RetryMySQLDatabase(**Links, charset='utf8mb4')
 
 
 class DarkNet_Saler(Model):
