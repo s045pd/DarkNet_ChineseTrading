@@ -14,7 +14,9 @@ class ConfigDev:
     ReportGroupID = '-100000000001'
 
     tor_proxy = "socks5h://127.0.0.1:9150"
+    
     sendForTest = False
+    filterArea = ("其它类别","卡料-CVV","基础知识","实体物品","影视-色情","技术-教学","数据-情报","服务-接单","私人专拍","虚拟资源")
 
 
 

@@ -406,9 +406,9 @@ class DarkNet_ChineseTradingNetwork(object):
         shortmsg = f'[{details.uptime}] {details.title}'
         self.report(shortmsg)
 
-        msg = f'{details.uptime}\n🔥{details.title}\n\nAuthor: {username}\nPrice: ${details.priceUSDT}\n\n\n${content}\n'
+        msg = f'{details.uptime}\n🔥{details.title}\n\nAuthor: {username}\nPrice: ${details.priceUSDT}\nSource: {details.detailurl}\n\n\n${content}\n'
         msg = msg if len(msg)<1000 else msg[:997] + '...'
-        if moment.date(details.uptime) > moment.now().replace(hours=0, minutes=0, seconds=0).add(days=self.noticerange) or Config.sendForTest:
+        if (details.area in Config.filterArea and  moment.date(details.uptime) > moment.now().replace(hours=0, minutes=0, seconds=0).add(days=self.noticerange)) or Config.sendForTest:
             if not imgs:
                 telegram.delay(msg, sid, Config.darknetchannelID)
             else:
