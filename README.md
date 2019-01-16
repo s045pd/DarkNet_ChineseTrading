@@ -57,7 +57,7 @@
 	配置```config_dev.py```中的连接设定与```TelegramRobotToken```
 
 	```
-	mv config_dev.py conf.py
+	mv config_dev.py conf.py 
 	bash restart_tor.sh
 	bash restart_task.sh
 	python run.py
