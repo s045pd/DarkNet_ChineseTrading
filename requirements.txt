@@ -11,3 +11,4 @@ moment==0.8.2
 stem==1.6.0
 progressbar2==3.39.2
 redis
+pysocks
