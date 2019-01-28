@@ -11,7 +11,7 @@ import time
 from base64 import b64encode
 from urllib.parse import urljoin
 
-# import pudb;pu.db
+#import pudb;pu.db
 import moment
 import progressbar
 import pymysql
@@ -60,22 +60,8 @@ class DarkNet_ChineseTradingNetwork(object):
         self.report = lambda txt: self.loger.info(colored(txt, 'green'))
         self.warn = lambda txt: self.loger.info(colored(txt, 'yellow'))
         self.error = lambda txt: self.loger.info(colored(txt, 'red'))
-        self.session = requests.Session()
-        self.session.headers = {
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-            "Accept-Encoding": "gzip, deflate",
-            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-            "Cache-Control": "max-age=0",
-            "Connection": "keep-alive",
-            "Referer": "http://bmp3qqimv55xdznb.onion/index.php",
-            "Upgrade-Insecure-Requests": "1",
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36"
-        }
         self.proxy_url = 'socks5h://127.0.0.1:9150'
-        self.session.proxies = {
-            'https': self.proxy_url,
-            'http': self.proxy_url
-        }
+        self.session = self.NewSession()
         self.usemaster = True
         self.master = None
         self.sid = ''
@@ -85,6 +71,24 @@ class DarkNet_ChineseTradingNetwork(object):
         self.rootpath = 'datas'
         self.screenpath = 'screen_shot'
         list(map(self.InitPath, [self.rootpath, self.screenpath]))
+
+    def NewSession(self):
+        newSession = requests.Session()
+        newSession.headers = {
+              "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+              "Accept-Encoding": "gzip, deflate",
+              "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+              "Cache-Control": "max-age=0",
+              "Connection": "keep-alive",
+              "Referer": "http://bmp3qqimv55xdznb.onion/index.php",
+              "Upgrade-Insecure-Requests": "1",
+              "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36"
+        }
+        newSession.proxies = {
+            'https': self.proxy_url,
+            'http': self.proxy_url
+        }
+        return newSession
 
     def InitAdd(self, domainLIST):
         for item in domainLIST:
@@ -105,7 +109,11 @@ class DarkNet_ChineseTradingNetwork(object):
         target = targets[0]
         try:
             self.warn(f'[{target.domain}]Getting PHPSESSID')
+            self.session.cookies.clear()
+            self.info(f'Already Cleaned Session Cookies.')
             resp = self.session.get(f'http://{target.domain}')
+            resp = self.session.get(f'http://{target.domain}/index.php') 
+            self.info(f'Current Cookie Nums: {len(self.session.cookies)}')
             target.ismaster = True
             target.title = jq(resp.text)('title').text()
             self.usemaster = True
@@ -118,7 +126,7 @@ class DarkNet_ChineseTradingNetwork(object):
             else:
                 self.usr = user[0].user
                 self.pwd = user[0].pwd
-                if random.choice([1, 0]):  # 佛系注册堆积账号池
+                if random.choice([1,0,0]):  # 佛系注册堆积账号池
                     self.Reg()
             return True
         except KeyboardInterrupt:
@@ -141,7 +149,6 @@ class DarkNet_ChineseTradingNetwork(object):
             "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
-
             "Content-Type": "application/x-www-form-urlencoded",
             "Origin": f"http://{self.domain}",
             "Pragma": "no-cache",
@@ -152,18 +159,18 @@ class DarkNet_ChineseTradingNetwork(object):
         step1resp = self.session.get(
             f"http://{self.domain}/ucp.php?mode=register").text
         step1 = jq(step1resp)
-        self.sid = re.findall('sid=(.*?)"', step1resp)[0]
+        self.info(f'RegPage Confirmed. {"sid" in step1resp}')
         token = step1('input[name="form_token"]').attr('value')
+        self.report(f'Got Token: {token}')
         creation_time = step1('input[name="creation_time"]').attr('value')
-        self.info(f"Get Token: {token} Create_time: {creation_time}")
-        url = f"http://{self.domain}/ucp.php?mode=register&sid={self.sid}"
+        self.report(f"Got Create_time: {creation_time}")
+        url = f"http://{self.domain}/ucp.php?mode=register"
         step2resp = self.session.post(url, data={
             "agreed": "===好的,我已明白,请跳转到下一页继续注册====",
             "change_lang": "",
             "creation_time": creation_time,
             "form_token": token
         }, headers=headers)
-
         self.SaveError('step2.html', step2resp)
         step2 = jq(step2resp.text)
         token = step2('input[name="form_token"]').attr('value')
@@ -171,8 +178,7 @@ class DarkNet_ChineseTradingNetwork(object):
         qa_answer = re.findall('请在右边框中输入： (.*?)：</label>',step2resp.text)[0]
         self.report(f'Got answer: {qa_answer}')
         qa_confirm_id = step2('#qa_confirm_id').attr('value') 
-
-        self.usr = self.RandomKey()
+        self.usr = self.RandomKey(12)
         self.pwd = self.RandomKey()
         self.info(f'set Usr: {self.usr} ,Pwd: {self.pwd}')
         data = {
@@ -223,7 +229,6 @@ class DarkNet_ChineseTradingNetwork(object):
         }
         resp = self.session.post(url, data=data, verify=False, timeout=120)
         self.sid = ''.join(re.findall("sid=(.*?)'", resp.text)[:1])
-        self.info(f"SID: {self.sid}")
         if self.usr not in resp.text:
             self.error('Auth faild')
             self.SaveError('Autherror.html', resp)
@@ -238,6 +243,8 @@ class DarkNet_ChineseTradingNetwork(object):
             self.types = {item('.index_list_title').attr('href').split('=')[1].split('&')[0]: item('tr:nth-child(1) > td').text(
             ).split()[0] for item in jq(resp.text)('.ad_table_b').items()}
             self.report(self.types)
+            # self.session.get(f'http://{self.domain}')
+            # self.session.get(f'http://{self.domain}/index.php')  
 
     def SaveError(self, filename, resp):
         fullfilepath = f"{self.rootpath}/{filename}"
@@ -247,6 +254,7 @@ class DarkNet_ChineseTradingNetwork(object):
 
     @retry()
     def GetTypeDatas(self, qeaid, name, page=1):
+    
         url = f"http://{self.domain}/pay/user_area.php?page_y1={page}&q_u_id=0&m_order=&q_ea_id={qeaid}&sid={self.sid}#page_y1"
         self.warn(url)
         resp = self.session.get(url)
@@ -280,6 +288,7 @@ class DarkNet_ChineseTradingNetwork(object):
             raise
 
     def CheckIfNeedLogin(self, resp, passed=False, needraise=True):
+
         if passed or "缓存已经过期" in resp.text:
             """
                 登录超时重新登录
@@ -299,9 +308,10 @@ class DarkNet_ChineseTradingNetwork(object):
     def NewNet(self):
         pass
 
-    # @retry((requests.exceptions.ConnectionError, ValueError))
-    @retry((requests.exceptions.ConnectionError))
+    # @retry((requests.exceptions.ConnectionError))
+    @retry()
     def GetDetails(self, url, muti):
+        # time.sleep(2)
         resp = self.session.get(url)
         resp.encoding = "utf8"
         self.CheckIfNeedLogin(resp)
@@ -311,6 +321,7 @@ class DarkNet_ChineseTradingNetwork(object):
 
         try:
             uid = FixNums(jqperson('tr:nth-child(5) > td:nth-child(2)').text())
+            
             sid = FixNums(jqdetail(
                 'tr:nth-child(3) > td:nth-child(2)').text())
 
@@ -461,4 +472,5 @@ if __name__ == "__main__":
             break 
         except Exception as e:
             logreport.delay(str(e))
+            print(f'exit {e}')
             time.sleep(10*60)
