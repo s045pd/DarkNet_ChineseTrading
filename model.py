@@ -9,32 +9,30 @@ from conf import Config
 from peewee import __exception_wrapper__
 
 Links = {
-    'host': Config.mysql_host,
-    'port': Config.mysql_port,
-    'user': Config.mysql_usr,
-    'password': Config.mysql_pass,
-
+    "host": Config.mysql_host,
+    "port": Config.mysql_port,
+    "user": Config.mysql_usr,
+    "password": Config.mysql_pass,
 }
 
 try:
     con = pymysql.connect(**Links)
     with con.cursor() as cursor:
         cursor.execute(
-            f'create database {Config.mysql_db} character set UTF8mb4 collate utf8mb4_bin')
+            f"create database {Config.mysql_db} character set UTF8mb4 collate utf8mb4_bin"
+        )
     con.close()
 except pymysql.err.ProgrammingError as e:
-    if '1007' in str(e):
+    if "1007" in str(e):
         pass
 except Exception as e:
     raise e
 
- 
+
 class RetryOperationalError(object):
- 
     def execute_sql(self, sql, params=None, commit=True):
         try:
-            cursor = super(RetryOperationalError, self).execute_sql(
-                sql, params, commit)
+            cursor = super(RetryOperationalError, self).execute_sql(sql, params, commit)
         except OperationalError:
             if not self.is_closed():
                 self.close()
@@ -45,12 +43,13 @@ class RetryOperationalError(object):
                     self.commit()
         return cursor
 
+
 class RetryMySQLDatabase(RetryOperationalError, MySQLDatabase):
     pass
 
 
-Links['database'] = Config.mysql_db
-db = RetryMySQLDatabase(**Links, charset='utf8mb4')
+Links["database"] = Config.mysql_db
+db = RetryMySQLDatabase(**Links, charset="utf8mb4")
 
 
 class DarkNet_Saler(Model):
@@ -78,7 +77,7 @@ class DarkNet_User(Model):
 class DarkNet_IMGS(Model):
     sid = IntegerField(primary_key=True, verbose_name="交易编号")
     img = TextField(verbose_name="图片json")
-    detail = TextField(default=json.dumps([]), verbose_name='备注')
+    detail = TextField(default=json.dumps([]), verbose_name="备注")
     islink = BooleanField(default=True)
 
     class Meta:
@@ -98,12 +97,10 @@ class DarkNet_Notice(Model):
 class DarkNet_DataSale(Model):
     sid = IntegerField(primary_key=True, verbose_name="交易编号")
 
-    intime = DateTimeField(default=datetime.datetime.now,
-                           verbose_name="数据插入时间")
+    intime = DateTimeField(default=datetime.datetime.now, verbose_name="数据插入时间")
     uptime = DateTimeField(verbose_name="发布时间")
     lasttime = DateTimeField(verbose_name="商家最后在线")
-    user = ForeignKeyField(
-        DarkNet_Saler, on_delete=None, verbose_name="发布用户ID")
+    user = ForeignKeyField(DarkNet_Saler, on_delete=None, verbose_name="发布用户ID")
     area = CharField(max_length=32, verbose_name="区域")
     title = CharField(max_length=155, verbose_name="发布标题")
     priceBTC = FloatField(verbose_name="出售价格（BTC）")
@@ -117,32 +114,37 @@ class DarkNet_DataSale(Model):
     oversell = BigIntegerField(verbose_name="出售数量（出售数量）")  # 出售数量
     sold = IntegerField(verbose_name="已经出售（本单成交）")  # 已经出售
 
-    img = ForeignKeyField(
-        DarkNet_IMGS, on_delete=None, verbose_name="图片Base64")
-    notice = ForeignKeyField(
-        DarkNet_Notice, verbose_name="消息提醒", on_delete='CASCADE')
+    img = ForeignKeyField(DarkNet_IMGS, on_delete=None, verbose_name="图片Base64")
+    notice = ForeignKeyField(DarkNet_Notice, verbose_name="消息提醒", on_delete="CASCADE")
 
     class Meta:
         database = db
-        indexes = (
-            (('uptime', 'user', 'title'), True),
-        )
+        indexes = ((("uptime", "user", "title"), True),)
 
 
 class DarkNetWebSites(Model):
     uid = AutoField(primary_key=True)
     domain = CharField(
-        max_length=191, unique=True, default="", null=True,  verbose_name="暗网域名")
+        max_length=191, unique=True, default="", null=True, verbose_name="暗网域名"
+    )
     intime = DateTimeField(default=datetime.datetime.now, verbose_name="插入时间")
     ismaster = BooleanField(default=False, verbose_name="是否为主节点")
     alive = BooleanField(default=True, verbose_name="存活状态")
     target = CharField(max_length=32, verbose_name="用途目标")
-    title = CharField(max_length=255, default='',  null=True)
+    title = CharField(max_length=255, default="", null=True)
 
     class Meta:
         database = db
 
 
 db.connect()
-db.create_tables([DarkNet_User, DarkNet_Saler, DarkNet_IMGS, DarkNet_Notice,
-                  DarkNet_DataSale, DarkNetWebSites]) 
+db.create_tables(
+    [
+        DarkNet_User,
+        DarkNet_Saler,
+        DarkNet_IMGS,
+        DarkNet_Notice,
+        DarkNet_DataSale,
+        DarkNetWebSites,
+    ]
+)

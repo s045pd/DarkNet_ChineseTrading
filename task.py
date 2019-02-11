@@ -15,30 +15,24 @@ from model import DarkNet_DataSale, DarkNet_IMGS, DarkNet_Notice, DarkNet_User
 
 telepot.api.set_proxy(Config.telegram_proxy)
 bot = telepot.Bot(Config.telegram_token)
-app = Celery(
-    'darknet', broker=f'redis://{Config.redis_host}:{Config.redis_port}//')
-
+app = Celery("darknet", broker=f"redis://{Config.redis_host}:{Config.redis_port}//")
 
 
 @app.task()
-def telegram(msg, sid,rid):
+def telegram(msg, sid, rid):
     bot.sendMessage(rid, msg)
-    query = DarkNet_Notice.update({
-        'telegram': True
-    }).where(DarkNet_Notice.sid == sid)
+    query = DarkNet_Notice.update({"telegram": True}).where(DarkNet_Notice.sid == sid)
     query.execute()
 
 
 @app.task()
-def telegram_withpic(pic,details,sid,rid):
+def telegram_withpic(pic, details, sid, rid):
     # bot.sendDocument(rid,pic,details) # unpretty~
-    bot.sendPhoto(rid,pic,details)
-    query = DarkNet_Notice.update({
-          'telegram': True
-     }).where(DarkNet_Notice.sid == sid)
+    bot.sendPhoto(rid, pic, details)
+    query = DarkNet_Notice.update({"telegram": True}).where(DarkNet_Notice.sid == sid)
     query.execute()
+
 
 @app.task()
 def logreport(msg):
-    bot.sendMessage(Config.ReportGroupID,msg)
-
+    bot.sendMessage(Config.ReportGroupID, msg)
