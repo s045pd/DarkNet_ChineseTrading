@@ -237,7 +237,7 @@ class DarkNet_ChineseTradingNetwork(object):
         }
         resp = self.session.post(url, data=data, verify=False, timeout=120)
         self.sid = "".join(re.findall("sid=(.*?)'", resp.text)[:1])
-        if self.usr not in resp.text:
+        if self.usr not in resp.text and "暗网欢迎您" not in resp.text:
             self.error("Auth faild")
             self.SaveError("Autherror.html", resp)
             if "已被封禁" in resp.text:
