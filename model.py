@@ -122,19 +122,6 @@ class DarkNet_DataSale(Model):
         indexes = ((("uptime", "user", "title"), True),)
 
 
-class DarkNetWebSites(Model):
-    uid = AutoField(primary_key=True)
-    domain = CharField(
-        max_length=191, unique=True, default="", null=True, verbose_name="暗网域名"
-    )
-    intime = DateTimeField(default=datetime.datetime.now, verbose_name="插入时间")
-    ismaster = BooleanField(default=False, verbose_name="是否为主节点")
-    alive = BooleanField(default=True, verbose_name="存活状态")
-    target = CharField(max_length=32, verbose_name="用途目标")
-    title = CharField(max_length=255, default="", null=True)
-
-    class Meta:
-        database = db
 
 
 db.connect()
@@ -145,6 +132,5 @@ db.create_tables(
         DarkNet_IMGS,
         DarkNet_Notice,
         DarkNet_DataSale,
-        DarkNetWebSites,
     ]
 )

@@ -27,7 +27,6 @@ from model import (
     DarkNet_Notice,
     DarkNet_Saler,
     DarkNet_User,
-    DarkNetWebSites,
 )
 from task import telegram, logreport, telegram_withpic
 
@@ -37,13 +36,6 @@ logging.basicConfig(
     format="[%(asctime)s] >>> %(levelname)s  %(name)s: %(message)s", level=logging.INFO
 )
 
-DefaultLIST = [
-    ("deepmix3m7iv2vcz.onion", False),
-    ("deepmix2j3cv4bds.onion", False),
-    ("deepmix2z2ayzi46.onion", False),
-    ("deepmix7j72q7kvz.onion", False),
-    ("bmp3qqimv55xdznb.onion", True),
-]
 
 
 def FixNums(data, to=9_999_999, error=-1):
@@ -65,6 +57,7 @@ class DarkNet_ChineseTradingNetwork(object):
         self.report = lambda txt: self.loger.info(colored(txt, "green"))
         self.warn = lambda txt: self.loger.info(colored(txt, "yellow"))
         self.error = lambda txt: self.loger.info(colored(txt, "red"))
+        self.domain = "deepmixaasic2p6vm6f4d4g52e4ve6t37ejtti4holhhkdsmq3jsf3id.onion"
         self.proxy_url = "socks5h://127.0.0.1:9150"
         self.session = self.NewSession()
         self.usemaster = True
@@ -92,36 +85,16 @@ class DarkNet_ChineseTradingNetwork(object):
         newSession.proxies = {"https": self.proxy_url, "http": self.proxy_url}
         return newSession
 
-    def InitAdd(self, domainLIST):
-        for item in domainLIST:
-            if not DarkNetWebSites.select().where(DarkNetWebSites.domain == item[0]):
-                Model = DarkNetWebSites()
-                Model.domain = item[0]
-                Model.ismaster = item[1]
-                Model.alive = True
-                Model.target = TYPES
-                Model.save()
 
     @retry()
     def FirstFetch(self):
-        targets = DarkNetWebSites.select().where(
-            DarkNetWebSites.ismaster == self.usemaster
-        )
-        if not targets:
-            return
-        target = targets[0]
         try:
-            self.warn(f"[{target.domain}]Getting PHPSESSID")
+            self.warn(f"[{self.domain}]Getting PHPSESSID")
             self.session.cookies.clear()
             self.info(f"Already Cleaned Session Cookies.")
-            resp = self.session.get(f"http://{target.domain}")
-            resp = self.session.get(f"http://{target.domain}/index.php")
+            resp = self.session.get(f"http://{self.domain}")
+            resp = self.session.get(f"http://{self.domain}/index.php")
             self.info(f"Current Cookie Nums: {len(self.session.cookies)}")
-            target.ismaster = True
-            target.title = jq(resp.text)("title").text()
-            self.usemaster = True
-            self.master = target
-            self.domain = target.domain
             user = (
                 DarkNet_User.select()
                 .where(DarkNet_User.useful == True)
@@ -138,14 +111,8 @@ class DarkNet_ChineseTradingNetwork(object):
             return True
         except KeyboardInterrupt:
             pass
-        except requests.Timeout:
-            target.alive = False
-            target.ismaster = False
-            self.usemaster = False
         except Exception as e:
             raise
-        finally:
-            target.save()
 
     @retry(delay=2, tries=20)
     def Reg(self):
@@ -519,7 +486,6 @@ class DarkNet_ChineseTradingNetwork(object):
         return imageBox
 
     def Run(self):
-        self.InitAdd(DefaultLIST)
         while True:
             self.CheckIfNeedLogin(None, True, False)
             for qeaid, name in self.types.items():
