@@ -24,7 +24,7 @@
 
 - ### python环境配置
 
-	下载并安装 **anaconda 3.5**
+	下载并安装 *anaconda 3.5*
 
 	```
 	pip install -r ./requirements.txt
@@ -40,7 +40,7 @@
 	cp torrc.sample ./torrc
 	vi torrc
 	```
-	将如下配置添加到 **```torrc```** 后，运行 **```restart_tor.sh```** 开启tor
+	将如下配置添加到 *```torrc```* 后，运行 *```restart_tor.sh```* 开启tor
 	
 	```
 	SOCKSPort 9150 					# socks5代理地址
@@ -52,7 +52,7 @@
 	
 - ### 存储环境
 
-	安装**```Docker```**后下载**```Redis```** **```Mysql```** 即可
+	安装*```Docker```*后下载*```Redis```* *```Mysql```* 即可
 
 - ### 运行
 	配置```config_dev.py```中的连接设定与```TelegramRobotToken```

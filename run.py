@@ -86,13 +86,21 @@ class DarkNet_ChineseTradingNetwork(object):
         return newSession
 
 
+    def RefreshNewDomain(self,resp):
+        find_new_domains = re.findall('<meta http-equiv="refresh" content="3;url=http://(.*?).onion">',resp.text)
+        if find_new_domains:
+            self.domain = find_new_domains[0]+'.onion'
+            self.info(f"Find New Domain: {self.domain}")
+            return self.session.get(f"http://{self.domain}")
+
+
     @retry()
     def FirstFetch(self):
         try:
             self.warn(f"[{self.domain}]Getting PHPSESSID")
             self.session.cookies.clear()
             self.info(f"Already Cleaned Session Cookies.")
-            resp = self.session.get(f"http://{self.domain}")
+            self.RefreshNewDomain(self.session.get(f"http://{self.domain}"))
             resp = self.session.get(f"http://{self.domain}/index.php")
             self.info(f"Current Cookie Nums: {len(self.session.cookies)}")
             user = (
