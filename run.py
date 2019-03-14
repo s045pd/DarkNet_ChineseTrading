@@ -57,7 +57,7 @@ class DarkNet_ChineseTradingNetwork(object):
         self.report = lambda txt: self.loger.info(colored(txt, "green"))
         self.warn = lambda txt: self.loger.info(colored(txt, "yellow"))
         self.error = lambda txt: self.loger.info(colored(txt, "red"))
-        self.domain = "deepmixaasic2p6vm6f4d4g52e4ve6t37ejtti4holhhkdsmq3jsf3id.onion"
+        self.domain = "deepmixbf6xqt3m7kagmurdt4v43f2h3doc23h7hrkjlroovyjsvseqd.onion"
         self.proxy_url = "socks5h://127.0.0.1:9150"
         self.session = self.NewSession()
         self.usemaster = True
