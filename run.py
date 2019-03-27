@@ -355,7 +355,7 @@ class DarkNet_ChineseTradingNetwork(object):
                     {
                         "uid": uid,
                         "user": username,
-                        "regtime": moment.date(jqperson("tr:nth-child(7)").text()).format("YYYY-MM-DD"),
+                        "regtime": moment.date(jqperson("tr:nth-child(7) > td:nth-child(2)").text()).format("YYYY-MM-DD"),
                     }
                 )
                 person = DarkNet_Saler.create(**personDatas)
@@ -439,7 +439,7 @@ class DarkNet_ChineseTradingNetwork(object):
         except Exception as e:
             self.error(f"GetDetails {e}")
             self.SaveError("error_264.html", resp)
-            self.error(jqdata.text())
+            # self.error(jqdata.text())
             raise
 
 
