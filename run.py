@@ -22,6 +22,7 @@ from termcolor import colored
 from io import BytesIO
 from conf import Config
 from model import (
+    DarkNet_Domain,
     DarkNet_DataSale,
     DarkNet_IMGS,
     DarkNet_Notice,
@@ -33,7 +34,7 @@ from task import telegram, logreport, telegram_withpic
 
 TYPES = "ChineseTradingNetwork"
 logging.basicConfig(
-    format="[%(asctime)s] >>> %(levelname)s  %(name)s: %(message)s", level=logging.INFO
+    format="[%(asctime)s] >>> %(levelname)s: %(message)s", level=logging.INFO
 )
 
 
@@ -49,10 +50,16 @@ def FixNums(data, to=9_999_999, error=-1):
         return error
 
 
+def float_format(data):
+    try:
+        return float(data)
+    except Exception as e:
+        return 0.0
+
+
 class DarkNet_ChineseTradingNetwork(object):
     def __init__(self):
         self.loger = logging.getLogger(f"DarkNet_{TYPES}")
-
         self.info = lambda txt: self.loger.info(colored(txt, "blue"))
         self.report = lambda txt: self.loger.info(colored(txt, "green"))
         self.warn = lambda txt: self.loger.info(colored(txt, "yellow"))
@@ -64,7 +71,6 @@ class DarkNet_ChineseTradingNetwork(object):
         self.master = None
         self.sid = ""
         self.justupdate = False
-
         self.noticerange = 0
         self.rootpath = "datas"
         self.screenpath = "screen_shot"
@@ -91,12 +97,15 @@ class DarkNet_ChineseTradingNetwork(object):
         if find_new_domains:
             self.domain = find_new_domains[0]+'.onion'
             self.info(f"Find New Domain: {self.domain}")
+            DarkNet_Domain.create(**{'domain':self.domain})
             return self.session.get(f"http://{self.domain}")
 
 
     @retry()
     def FirstFetch(self):
         try:
+            last_domain = DarkNet_Domain.select().order_by(DarkNet_Domain.datetime).limit(1)
+            self.domain = self.domain if not last_domain else last_domain[0].domain
             self.warn(f"[{self.domain}]Getting PHPSESSID")
             self.session.cookies.clear()
             self.info(f"Already Cleaned Session Cookies.")
@@ -242,7 +251,7 @@ class DarkNet_ChineseTradingNetwork(object):
         with open(fullfilepath, "w") as f:
             f.write(resp.text)
 
-    @retry()
+    @retry(delay=0.5)
     def GetTypeDatas(self, qeaid, name, page=1):
 
         url = f"http://{self.domain}/pay/user_area.php?page_y1={page}&q_u_id=0&m_order=&q_ea_id={qeaid}&sid={self.sid}#page_y1"
@@ -295,6 +304,7 @@ class DarkNet_ChineseTradingNetwork(object):
             """
             if self.FirstFetch():
                 self.Login()
+
         elif "您必须注册并登录才能浏览这个版面" in resp.text:
             """
                 账户遭到封锁重新注册
@@ -304,39 +314,38 @@ class DarkNet_ChineseTradingNetwork(object):
         elif "您的回答不正确" in resp.text:
             time.sleep(20)
             self.Reg()
+        else:
+            return True
 
-    def NewNet(self):
-        pass
+
+
 
     # @retry((requests.exceptions.ConnectionError))
-    @retry()
+    # @retry(delay=0.5)
     def GetDetails(self, url, muti):
-        # time.sleep(2)
         resp = self.session.get(url)
         resp.encoding = "utf8"
-        self.CheckIfNeedLogin(resp)
+        if not self.CheckIfNeedLogin(resp):
+            return
         jqdata = jq(resp.text)
         jqdetail = jqdata(".v_table_1")
         jqperson = jqdata(".v_table_2")
 
         try:
             uid = FixNums(jqperson("tr:nth-child(5) > td:nth-child(2)").text())
-
             sid = FixNums(jqdetail("tr:nth-child(3) > td:nth-child(2)").text())
-
             details = DarkNet_DataSale.select().where((DarkNet_DataSale.sid == sid))
             person = DarkNet_Saler.select().where((DarkNet_Saler.uid == uid))
             notice = DarkNet_Notice.select().where((DarkNet_Notice.sid == sid))
             img = DarkNet_IMGS.select().where((DarkNet_IMGS.sid == sid))
-
             personDatas = {
                 "salenums": FixNums(
                     jqperson("tr:nth-child(3) > td:nth-child(4)").text()
                 ),
-                "totalsales": float(
+                "totalsales": float_format(
                     jqperson("tr:nth-child(5) > td:nth-child(4)").text()
                 ),
-                "totalbuys": float(
+                "totalbuys": float_format(
                     jqperson("tr:nth-child(7) > td:nth-child(4)").text()
                 ),
             }
@@ -346,9 +355,7 @@ class DarkNet_ChineseTradingNetwork(object):
                     {
                         "uid": uid,
                         "user": username,
-                        "regtime": moment.date(
-                            jqperson("tr:nth-child(7) > td:nth-child(2)").text()
-                        ).format("YYYY-MM-DD"),
+                        "regtime": moment.date(jqperson("tr:nth-child(7)").text()).format("YYYY-MM-DD"),
                     }
                 )
                 person = DarkNet_Saler.create(**personDatas)
@@ -384,6 +391,7 @@ class DarkNet_ChineseTradingNetwork(object):
             RealUpTimeJQ = jqdata(".author")
             RealUpTimeJQ.remove("a")
             RealUpTimeJQ.remove("span")
+
             RealUpTime = moment.date(
                 RealUpTimeJQ.text().replace("年", "").replace("月", "").replace("日", "")
             )
@@ -393,10 +401,10 @@ class DarkNet_ChineseTradingNetwork(object):
                     f"{currentYear} "
                     + jqdetail("tr:nth-child(7) > td:nth-child(6)").text()
                 ).format("YYYY-MM-DD HH:mm:ss"),
-                "priceBTC": float(
+                "priceBTC": float_format(
                     jqdetail("tr:nth-child(3) > td:nth-child(4) > span").text()
                 ),
-                "priceUSDT": float(
+                "priceUSDT": float_format(
                     jqdetail("tr:nth-child(5) > td:nth-child(4)").text().split()[0]
                 ),
                 "lines": muti["lines"],
@@ -431,7 +439,9 @@ class DarkNet_ChineseTradingNetwork(object):
         except Exception as e:
             self.error(f"GetDetails {e}")
             self.SaveError("error_264.html", resp)
+            self.error(jqdata.text())
             raise
+
 
     def MakeMsg(self, details, content, imgs, sid, username):
         shortmsg = f"[{details.uptime}] {details.title}"

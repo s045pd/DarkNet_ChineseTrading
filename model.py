@@ -52,6 +52,15 @@ Links["database"] = Config.mysql_db
 db = RetryMySQLDatabase(**Links, charset="utf8mb4")
 
 
+class DarkNet_Domain(Model):
+    mid = AutoField(primary_key=True)
+    domain = CharField(max_length=180)
+    datetime = DateTimeField(default=datetime.datetime.now)
+
+    class Meta:
+        database = db
+
+
 class DarkNet_Saler(Model):
     uid = IntegerField(primary_key=True, verbose_name="用户编号")
     user = CharField(unique=True, max_length=20, verbose_name="用户外键")
@@ -127,6 +136,7 @@ class DarkNet_DataSale(Model):
 db.connect()
 db.create_tables(
     [
+        DarkNet_Domain,
         DarkNet_User,
         DarkNet_Saler,
         DarkNet_IMGS,
