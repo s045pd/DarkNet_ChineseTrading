@@ -131,8 +131,6 @@ class DarkNet_DataSale(Model):
         indexes = ((("uptime", "user", "title"), True),)
 
 
-
-
 db.connect()
 db.create_tables(
     [

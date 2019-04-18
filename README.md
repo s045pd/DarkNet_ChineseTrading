@@ -11,6 +11,7 @@
 
 ## 功能
 
+- Tor节点切换
 - 自动注册
 - 自动登录
 - 防封禁
@@ -29,7 +30,8 @@
 	`pip install -r ./requirements.txt`
 	
 - ### tor安装
-	> 当前需更新tor至[0.3.5.7版本]，旧版将无法解析该地址
+	> 当前需更新tor至[0.4.0.0版本]，旧版将有几率无法取得数据
+	> 如果无法通过如下命令安装最新版，推荐至官网编译安装最新源码包
 	
 	```
 	brew install tor
@@ -62,7 +64,6 @@
 	bash restart_task.sh
 	python run.py
 	
-	# python tor_ctl.py #定时tor节点切换
 	```
 	
 - ### 运行逻辑

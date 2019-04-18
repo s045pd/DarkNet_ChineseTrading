@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 *$py.class
+celery.info
+ghostdriver.log
+
 
 *.swp
 *.info

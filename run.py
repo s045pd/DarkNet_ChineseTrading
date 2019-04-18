@@ -1,208 +1,242 @@
-import json
-import logging
-import math
-import os
 import random
 import re
-import string
 import sys
 import time
 from base64 import b64encode
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
+from bs4 import BeautifulSoup as bs_4
 
 # import pudb;pu.db
 import moment
-import progressbar
-import pymysql
 import requests
-from peewee import fn
+
 from pyquery import PyQuery as jq
 from retry import retry
-from termcolor import colored
 from io import BytesIO
 from conf import Config
-from model import (
-    DarkNet_Domain,
-    DarkNet_DataSale,
-    DarkNet_IMGS,
-    DarkNet_Notice,
-    DarkNet_Saler,
-    DarkNet_User,
-)
 from task import telegram, logreport, telegram_withpic
-
-
-TYPES = "ChineseTradingNetwork"
-logging.basicConfig(
-    format="[%(asctime)s] >>> %(levelname)s: %(message)s", level=logging.INFO
-)
-
-
-
-def FixNums(data, to=9_999_999, error=-1):
-    """
-        专治超量
-    """
-    try:
-        nums = int(data)
-        return nums if nums < to else to
-    except Exception as e:
-        return error
-
-
-def float_format(data):
-    try:
-        return float(data)
-    except Exception as e:
-        return 0.0
+from common import make_new_tor_id, random_key, init_path
+from log import success, info, error, warning
+from parser import Parser
+from cursor import Cursor
 
 
 class DarkNet_ChineseTradingNetwork(object):
     def __init__(self):
-        self.loger = logging.getLogger(f"DarkNet_{TYPES}")
-        self.info = lambda txt: self.loger.info(colored(txt, "blue"))
-        self.report = lambda txt: self.loger.info(colored(txt, "green"))
-        self.warn = lambda txt: self.loger.info(colored(txt, "yellow"))
-        self.error = lambda txt: self.loger.info(colored(txt, "red"))
-        self.domain = "deepmixbf6xqt3m7kagmurdt4v43f2h3doc23h7hrkjlroovyjsvseqd.onion"
-        self.proxy_url = "socks5h://127.0.0.1:9150"
-        self.session = self.NewSession()
-        self.usemaster = True
-        self.master = None
-        self.sid = ""
-        self.justupdate = False
-        self.noticerange = 0
-        self.rootpath = "datas"
-        self.screenpath = "screen_shot"
-        list(map(self.InitPath, [self.rootpath, self.screenpath]))
+        self.__domain = "deepmixaasic2p6vm6f4d4g52e4ve6t37ejtti4holhhkdsmq3jsf3id.onion"
+        self.__autim = 0
+        self.__sid = ""
+        self.__just_update = False
+        self.__noticerange = 0
+        self.__rootpath = "datas"
+        self.__screenpath = "screen_shot"
 
-    def NewSession(self):
-        newSession = requests.Session()
-        newSession.headers = {
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+        list(map(init_path, [self.__rootpath, self.__screenpath]))
+        self.__init_domain()
+        self.session = self.__new_session()
+
+    def __init_domain(self):
+        last_domain = Cursor.get_last_domain()
+        self.__domain = last_domain if last_domain else self.__domain
+        self.__make_links()
+
+    def __new_session(self):
+        new_session = requests.Session()
+        new_session.headers = {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Encoding": "gzip, deflate",
-            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
             "Cache-Control": "max-age=0",
             "Connection": "keep-alive",
-            "Referer": "http://bmp3qqimv55xdznb.onion/index.php",
+            "Pragma": "no-cache",
             "Upgrade-Insecure-Requests": "1",
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0",
         }
-        newSession.proxies = {"https": self.proxy_url, "http": self.proxy_url}
-        return newSession
+        new_session.proxies = {"https": Config.tor_proxy, "http": Config.tor_proxy}
+        new_session.timeout = 30
+        return new_session
 
+    def __refresh_new_target(self, resp):
+        warning("Refresh Checking")
+        Parser.get_next_target
+        next_path = Parser.get_next_target(resp)
+        self.__sid = Parser.get_sid(resp, self.__sid)
 
-    def RefreshNewDomain(self,resp):
-        find_new_domains = re.findall('<meta http-equiv="refresh" content="3;url=http://(.*?).onion">',resp.text)
-        if find_new_domains:
-            self.domain = find_new_domains[0]+'.onion'
-            self.info(f"Find New Domain: {self.domain}")
-            DarkNet_Domain.create(**{'domain':self.domain})
-            return self.session.get(f"http://{self.domain}")
+        if next_path:
+            parse_res = urlparse(next_path)
+            domain = parse_res.netloc
+            query = parse_res.query
+            if domain and self.__domain != domain:
+                self.__domain = domain
+                info(f"Find New Domain: {self.__domain}")
+                Cursor.create_new_domain(self.__domain)
+                return self.session.get(self.main_url)
 
+            if query:
+                query = dict((item.split("=") for item in query.split("&")))
+                if "autim" in query:
+                    self.__autim = int(query["autim"])
+                    info(f"autim: {self.__autim}")
+
+            self.__make_links()
+            next_url = urljoin(resp.url, next_path)
+            warning(f"Refresh To: {next_url}")
+            return self.__refresh_new_target(self.session.get(next_url))
+        return resp
+
+    def __make_links(self):
+        self.main_url = f"http://{self.__domain}"
+        self.index_url = f"{self.main_url}/index.php"
+
+    def __report_cookies(self):
+        [success(f"{key}:{value}") for key, value in self.session.cookies.items()]
+
+    def __to_main_page(self):
+        warning(f"Fetch Main Page: {self.main_url}")
+        return self.session.get(self.main_url)
+
+    def __clear_cookies(self):
+        self.session.cookies.clear()
+        info(f"Already Cleaned Session Cookies.")
+
+    def __clean_log(self, resp, lens=100):
+        return (" ".join(bs_4(resp.text, "lxml").text.split()))[:lens] + "..."
+
+    def __create_random_author(self):
+        self.usr = random_key(12)
+        self.pwd = random_key()
+        info(f"usr: {self.usr} pwd: {self.pwd}")
+
+    def __get_pic_base64(self, link):
+        return (
+            link
+            if "http" not in link
+            else bytes.decode(b64encode(self.__get_pic(link)))
+        )
 
     @retry()
-    def FirstFetch(self):
+    def __get_pic(self, link):
+        return self.session.get(link).content
+
+    def __save_pics(self, urls, sid):
+        imageBox = []
+        for index, url in enumerate(urls):
+            url = url if "http" in url else urljoin(f"http://{self.__domain}", url)
+            info(f"---fetch PIC[{index}]:{url}")
+            with open(f"{self.__screenpath}/{sid}_{index}.png", "wb") as imgfile:
+                singelPIC = self.__get_pic(url)
+                imgfile.write(singelPIC)
+                imageBox.append(BytesIO(singelPIC))
+        return imageBox
+
+    @retry(delay=2, tries=20)
+    def __first_fetch(self):
         try:
-            last_domain = DarkNet_Domain.select().order_by(DarkNet_Domain.datetime).limit(1)
-            self.domain = self.domain if not last_domain else last_domain[0].domain
-            self.warn(f"[{self.domain}]Getting PHPSESSID")
-            self.session.cookies.clear()
-            self.info(f"Already Cleaned Session Cookies.")
-            self.RefreshNewDomain(self.session.get(f"http://{self.domain}"))
-            resp = self.session.get(f"http://{self.domain}/index.php")
-            self.info(f"Current Cookie Nums: {len(self.session.cookies)}")
-            user = (
-                DarkNet_User.select()
-                .where(DarkNet_User.useful == True)
-                .order_by(fn.Rand())
-                .limit(1)
-            )
-            if not bool(user):
-                self.Reg()
+
+            warning(f"Domain: {self.__domain}")
+            self.__clear_cookies()
+            self.__autim, self.__sid, self.__login_payload, self.__login_url, self.__reg_url = Parser.get_login_and_reg_payload(
+                self.__refresh_new_target(self.__to_main_page())
+            )  # / -> ucp.php
+            self.__report_cookies()
+            user = Cursor.get_random_user()
+            (self.__reg())
+            if not user:
+                self.__reg()
             else:
-                self.usr = user[0].user
-                self.pwd = user[0].pwd
-                if random.choice([1, 0, 0]):  # 佛系注册堆积账号池
-                    self.Reg()
+                self.usr = user.user
+                self.pwd = user.pwd
+                if random.choice([1, 0, 0, 0, 0]):  # 佛系注册堆积账号池
+                    self.__reg()
             return True
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            raise
+            raise e
 
-    @retry(delay=2, tries=20)
-    def Reg(self):
-        self.warn("Start Regging")
-        headers = {
+    def __make_reg_headers(self, resp):
+        return {
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
             "Accept-Encoding": "gzip, deflate",
-            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "Content-Type": "application/x-www-form-urlencoded",
-            "Origin": f"http://{self.domain}",
+            "Origin": self.main_url,
             "Pragma": "no-cache",
-            "Referer": f"http://{self.domain}/ucp.php?mode=register&sid={self.sid}",
+            "Referer": resp.url,
             "Upgrade-Insecure-Requests": "1",
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0",
         }
-        step1resp = self.session.get(f"http://{self.domain}/ucp.php?mode=register").text
-        step1 = jq(step1resp)
-        self.info(f'RegPage Confirmed. {"sid" in step1resp}')
-        token = step1('input[name="form_token"]').attr("value")
-        self.report(f"Got Token: {token}")
-        creation_time = step1('input[name="creation_time"]').attr("value")
-        self.report(f"Got Create_time: {creation_time}")
-        url = f"http://{self.domain}/ucp.php?mode=register"
-        step2resp = self.session.post(
-            url,
+
+    @retry(delay=2, tries=20)
+    def __reg(self):
+        warning("Reg Confirm")
+        resp = self.__refresh_new_target(
+            self.session.get(
+                self.__reg_url,
+                headers={
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+                    "Accept-Encoding": "gzip, deflate",
+                    "Accept-Language": "en-US,en;q=0.5",
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Pragma": "no-cache",
+                    "Referer": self.__reg_url,
+                    "Upgrade-Insecure-Requests": "1",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0",
+                },
+            )
+        )
+        token, creation_time = Parser.get_token_and_creation_time(resp)
+        warning("Start Reg")
+        resp = self.session.post(
+            self.__reg_url,
             data={
                 "agreed": "===好的,我已明白,请跳转到下一页继续注册====",
+                "autim": self.__autim,
                 "change_lang": "",
                 "creation_time": creation_time,
                 "form_token": token,
             },
-            headers=headers,
+            headers=self.__make_reg_headers(resp),
         )
-        self.SaveError("step2.html", step2resp)
-        step2 = jq(step2resp.text)
-        token = step2('input[name="form_token"]').attr("value")
-        creation_time = step2('input[name="creation_time"]').attr("value")
-        qa_answer = re.findall("请在右边框中输入： (.*?)：</label>", step2resp.text)[0]
-        self.report(f"Got answer: {qa_answer}")
-        qa_confirm_id = step2("#qa_confirm_id").attr("value")
-        self.usr = self.RandomKey(12)
-        self.pwd = self.RandomKey()
-        self.info(f"set Usr: {self.usr} ,Pwd: {self.pwd}")
+        token, creation_time = Parser.get_token_and_creation_time(resp)
+        qa_answer, qa_confirm_id = Parser.get_qa_answer_and_id(resp)
+        self.__create_random_author()
         data = {
-            "username": self.usr,
+            "agreed": "true",
+            "autim": self.__autim,
+            "change_lang": "0",
+            "creation_time": creation_time,
+            "email": "xxxx@xxxx.xxx",
+            "form_token": token,
+            "lang": "zh_cmn_hans",
             "new_password": self.pwd,
             "password_confirm": self.pwd,
-            "email": "xxxx@xxxx.xxx",
-            "lang": "zh_cmn_hans",
-            "tz_date": "UTC+08:00+-+Asia/Brunei+-+"
-            + moment.now().format("DD+MM月+YYYY,+HH:mm"),
-            "tz": "Asia/Hong_Kong",
-            "agreed": "true",
-            "change_lang": "0",
             "qa_answer": qa_answer,
             "qa_confirm_id": qa_confirm_id,
+            "tz": "Asia/Hong_Kong",
+            "tz_date": "UTC+08:00+-+Asia/Brunei+-+"
+            + moment.now().format("DD+MM月+YYYY,+HH:mm"),
             "submit": " 用户名与密码已填好,+点此提交 ",
-            "creation_time": creation_time,
-            "form_token": token,
+            "username": self.usr,
         }
-        resp = self.session.post(url, data=data, headers=headers)
+        resp = self.session.post(
+            self.__reg_url, data=data, headers=self.__make_reg_headers(resp)
+        )
         try:
             assert "感谢注册" in resp.text
-            self.report("Reg success！")
-            DarkNet_User.create(**{"user": self.usr, "pwd": self.pwd})
+            success("Reg success！")
+            Cursor.create_new_user({"user": self.usr, "pwd": self.pwd})
         except AssertionError:
-            self.error(jq(resp.text).text())
-            self.SaveError("reg.html", resp)
+            error("Reg failed！")
+            error(self.__clean_log(resp))
+            # self.__save_error("reg.html", resp)
 
     @retry(delay=2, tries=20)
-    def Login(self):
+    def __login(self):
         """
             ### 再次尝试
             1.因为网络问题重试
@@ -211,213 +245,128 @@ class DarkNet_ChineseTradingNetwork(object):
             2.因为账户被封重试
             3.因为账户认证错误重试
         """
-        self.warn("Login...")
-        url = f"http://{self.domain}/ucp.php?mode=login"
-        data = {
-            "username": self.usr,
-            "password": self.pwd,
-            "login": "登录",
-            "redirect": f"./index.php&sid={self.sid}",
-        }
-        resp = self.session.post(url, data=data, verify=False, timeout=120)
-        self.sid = "".join(re.findall("sid=(.*?)'", resp.text)[:1])
+        warning(f"Login -> [{self.usr}:{self.pwd}]")
+        self.__login_payload.update({"password": self.pwd, "username": self.usr})
+        resp = self.__refresh_new_target(
+            self.session.post(
+                self.__login_url, data=self.__login_payload, verify=False, timeout=120
+            )
+        )
         if self.usr not in resp.text and "暗网欢迎您" not in resp.text:
-            self.error("Auth faild")
-            self.SaveError("Autherror.html", resp)
+            error(f"Auth Faild: {self.__clean_log(resp)}")
+            # self.__save_error("Autherror.html", resp)
             if "已被封禁" in resp.text:
-                DarkNet_User.update({"useful": False}).where(
-                    DarkNet_User.user == self.usr
-                ).execute()
-            self.Reg()
+                Cursor.ban_user(self.usr)
+                self.__reg()
             raise ValueError
         else:
-            self.report("Auth Success")
-            self.types = {
-                item(".index_list_title")
-                .attr("href")
-                .split("=")[1]
-                .split("&")[0]: item("tr:nth-child(1) > td")
-                .text()
-                .split()[0]
-                for item in jq(resp.text)(".ad_table_b").items()
-            }
-            self.report(self.types)
-            # self.session.get(f'http://{self.domain}')
-            # self.session.get(f'http://{self.domain}/index.php')
+            success("Auth Success")
+            self.types = Parser.get_current_type(resp)
 
-    def SaveError(self, filename, resp):
-        fullfilepath = f"{self.rootpath}/{filename}"
-        self.error(f"Html Log Saved to {fullfilepath}")
+    def __save_error(self, filename, resp):
+        fullfilepath = f"{self.__rootpath}/{filename}"
+        info(f"Html Log Saved to {fullfilepath}")
         with open(fullfilepath, "w") as f:
             f.write(resp.text)
 
-    @retry(delay=0.5)
-    def GetTypeDatas(self, qeaid, name, page=1):
-
-        url = f"http://{self.domain}/pay/user_area.php?page_y1={page}&q_u_id=0&m_order=&q_ea_id={qeaid}&sid={self.sid}#page_y1"
-        self.warn(url)
+    @retry(delay=2, tries=20)
+    def __get_type_datas(self, qeaid, name, page=1):
+        url = f"http://{self.__domain}/pay/user_area.php?page_y1={page}&q_u_id=0&m_order=&q_ea_id={qeaid}&sid={self.__sid}#page_y1"
+        warning(url)
         resp = self.session.get(url)
         resp.encoding = "utf8"
         hasres = False
         try:
-            self.CheckIfNeedLogin(resp)
-            self.SaveError(f"{qeaid}_{name}_{page}.html", resp)
-            self.info(len(resp.text))
-            jqdata = jq(resp.text)
-            for item in jqdata("table.m_area_a tr").items():
-                detailPath = item("div.length_400>a").attr("href")
-                if detailPath:
-                    detailsURL = urljoin(resp.url, detailPath)
-                    self.GetDetails(
-                        detailsURL,
-                        {
-                            "lines": FixNums(
-                                item("td:nth-child(7)").text().replace("天", "")
-                            ),
-                            "hot": FixNums(item("td:nth-child(8)").text()),
-                            "title": item("td:nth-child(5)").text(),
-                            "area": item("td:nth-child(3)").text(),
-                        },
-                    )
-                    hasres = True
+            self.__check_if_need_relogin(resp)
+            self.__save_error(f"{qeaid}_{name}_{page}.html", resp)
+            for item, details_url in Parser.get_types(resp):
+                self.__get_details(details_url, Parser.get_type_datas(item))
+                hasres = True
             if page == 1:
-                maxpageStr = "".join(
-                    jqdata(".page_b1:nth-last-child(1)").text().split()
-                )
-                return (
-                    FixNums(maxpageStr, to=1, error=1)
-                    if maxpageStr and not self.justupdate
-                    else 1
-                )
+                return Parser.get_max_page(resp, self.__just_update)
             if hasres:
                 return True
+        except KeyboardInterrupt:
+            pass
         except Exception as e:
-            self.error(f"GetTypeDatas: {e}")
-            self.SaveError("GetTypeDatas.html", resp)
-            raise
+            error(f"__get_type_datas: {e}")
+            error(self.__clean_log(resp))
+            # raise
 
-    def CheckIfNeedLogin(self, resp, passed=False, needraise=True):
+    def __check_if_need_relogin(self, resp, passed=False, needraise=True):
 
         if passed or "缓存已经过期" in resp.text:
             """
                 登录超时重新登录
             """
-            if self.FirstFetch():
-                self.Login()
+            if self.__first_fetch():
+                self.__login()
 
         elif "您必须注册并登录才能浏览这个版面" in resp.text:
             """
                 账户遭到封锁重新注册
             """
-            self.Reg()
+            self.__reg()
 
         elif "您的回答不正确" in resp.text:
             time.sleep(20)
-            self.Reg()
+            self.__reg()
         else:
             return True
 
-
-
-
     # @retry((requests.exceptions.ConnectionError))
-    # @retry(delay=0.5)
-    def GetDetails(self, url, muti):
+    @retry(delay=2, tries=20)
+    def __get_details(self, url, muti):
         resp = self.session.get(url)
         resp.encoding = "utf8"
-        if not self.CheckIfNeedLogin(resp):
+        if not self.__check_if_need_relogin(resp):
             return
-        jqdata = jq(resp.text)
-        jqdetail = jqdata(".v_table_1")
-        jqperson = jqdata(".v_table_2")
 
+        bs_data = bs_4(resp.text, "lxml")
+        uid, sid = Parser.get_uid_and_sid(bs_data)
+
+        if not all((uid, sid)):
+            return
+
+        details, person, notice, img = Cursor.get_model_details(uid, sid)
         try:
-            uid = FixNums(jqperson("tr:nth-child(5) > td:nth-child(2)").text())
-            sid = FixNums(jqdetail("tr:nth-child(3) > td:nth-child(2)").text())
-            details = DarkNet_DataSale.select().where((DarkNet_DataSale.sid == sid))
-            person = DarkNet_Saler.select().where((DarkNet_Saler.uid == uid))
-            notice = DarkNet_Notice.select().where((DarkNet_Notice.sid == sid))
-            img = DarkNet_IMGS.select().where((DarkNet_IMGS.sid == sid))
-            personDatas = {
-                "salenums": FixNums(
-                    jqperson("tr:nth-child(3) > td:nth-child(4)").text()
-                ),
-                "totalsales": float_format(
-                    jqperson("tr:nth-child(5) > td:nth-child(4)").text()
-                ),
-                "totalbuys": float_format(
-                    jqperson("tr:nth-child(7) > td:nth-child(4)").text()
-                ),
-            }
-            username = jqperson("tr:nth-child(3) > td:nth-child(2)").text()
+            person_datas, username = Parser.get_person_data(bs_data)
             if not person:
-                personDatas.update(
+                person_datas.update(
                     {
                         "uid": uid,
                         "user": username,
-                        "regtime": moment.date(jqperson("tr:nth-child(7) > td:nth-child(2)").text()).format("YYYY-MM-DD"),
+                        "regtime": Parser.get_reg_date(bs_data, "1999-01-01"),
                     }
                 )
-                person = DarkNet_Saler.create(**personDatas)
+                person = Cursor.create_person(person_datas)
+
             else:
-                DarkNet_Saler.update(personDatas).where(
-                    (DarkNet_Saler.uid == uid)
-                ).execute()
+                Cursor.update_person(person_datas, uid)
                 person = person[0].uid
 
             if not notice:
-                notice = DarkNet_Notice.create(**{"sid": sid})
+                notice = Cursor.create_notice({"sid": sid})
             else:
                 notice = notice[0].sid
 
             detailImages = None
-            detailContent = " ".join(jqdata(".postbody .content").text().split())
+            detailContent = Parser.get_detail_content(bs_data)
             if not img:
-                urls = [_.attr("src") for _ in jqdata(".postbody img").items()]
-                img = DarkNet_IMGS.create(
-                    **{"sid": sid, "img": urls, "detail": detailContent}
+                urls = Parser.get_img_urls(bs_data)
+                img = Cursor.create_img(
+                    {"sid": sid, "img": urls, "detail": detailContent}
                 )
-                detailImages = self.SavePics(urls, sid)
+                detailImages = self.__save_pics(urls, sid)
             else:
                 img = img[0].sid
-
-            currentYear = moment.now().year
-            soldNum = FixNums(
-                jqdetail("tr:nth-child(7) > td:nth-child(4)").text(), to=99999
+            current_year = moment.now().year
+            real_up_time = Parser.get_up_time(bs_data, current_year)
+            details_datas = Parser.get_details(
+                bs_data, current_year, real_up_time, muti
             )
-            toCurrentYearDateTime = moment.date(
-                f"{currentYear} " + jqdetail("tr:nth-child(3) > td:nth-child(6)").text()
-            )
-            RealUpTimeJQ = jqdata(".author")
-            RealUpTimeJQ.remove("a")
-            RealUpTimeJQ.remove("span")
-
-            RealUpTime = moment.date(
-                RealUpTimeJQ.text().replace("年", "").replace("月", "").replace("日", "")
-            )
-            RealUpTime = RealUpTime if RealUpTime._date else toCurrentYearDateTime
-            detailsDatas = {
-                "lasttime": moment.date(
-                    f"{currentYear} "
-                    + jqdetail("tr:nth-child(7) > td:nth-child(6)").text()
-                ).format("YYYY-MM-DD HH:mm:ss"),
-                "priceBTC": float_format(
-                    jqdetail("tr:nth-child(3) > td:nth-child(4) > span").text()
-                ),
-                "priceUSDT": float_format(
-                    jqdetail("tr:nth-child(5) > td:nth-child(4)").text().split()[0]
-                ),
-                "lines": muti["lines"],
-                "uptime": RealUpTime.format("YYYY-MM-DD HH:mm:ss"),
-                "hot": muti["hot"],
-                "types": jqdetail("tr:nth-child(5) > td:nth-child(2)").text(),
-                "status": jqdetail("tr:nth-child(7) > td:nth-child(2)").text(),
-                "oversell": jqdetail("tr:nth-child(9) > td:nth-child(2)").text(),
-                "sold": soldNum,
-            }
-
             if not details:
-                detailsDatas.update(
+                details_datas.update(
                     {
                         "sid": sid,
                         "user": person,
@@ -428,25 +377,19 @@ class DarkNet_ChineseTradingNetwork(object):
                         "notice": notice,
                     }
                 )
-                details = DarkNet_DataSale.create(**detailsDatas)
-                self.MakeMsg(details, detailContent, detailImages, sid, username)
+                details = Cursor.create_details(details_datas)
+                self.__make_msg(details, detailContent, detailImages, sid, username)
             else:
-                self.warn(f'-{RealUpTime}- {muti["title"]}')
-                DarkNet_DataSale.update(detailsDatas).where(
-                    (DarkNet_DataSale.sid == sid)
-                ).execute()
-
+                warning(f'-{real_up_time}- {muti["title"]}')
+                Cursor.update_details(details_datas, sid)
         except Exception as e:
-            self.error(f"GetDetails {e}")
-            self.SaveError("error_264.html", resp)
-            # self.error(jqdata.text())
-            raise
+            error(f"[run-->__get_details]: {e}")
+            # raise e
+            # self.__save_error("error_264.html", resp)
 
-
-    def MakeMsg(self, details, content, imgs, sid, username):
+    def __make_msg(self, details, content, imgs, sid, username):
         shortmsg = f"[{details.uptime}] {details.title}"
-        self.report(shortmsg)
-
+        success(shortmsg)
         msg = f"{details.uptime}\n🔥{details.title}\n\nAuthor: {username}\nPrice: ${details.priceUSDT}\nSource: {details.detailurl}\n\n\n${content}\n"
         msg = msg if len(msg) < 1000 else msg[:997] + "..."
         if (
@@ -454,73 +397,35 @@ class DarkNet_ChineseTradingNetwork(object):
             and moment.date(details.uptime)
             > moment.now()
             .replace(hours=0, minutes=0, seconds=0)
-            .add(days=self.noticerange)
+            .add(days=self.__noticerange)
         ) or Config.sendForTest:
             if not imgs:
                 telegram.delay(msg, sid, Config.darknetchannelID)
             else:
                 telegram_withpic(imgs[0], msg, sid, Config.darknetchannelID)
 
-    @staticmethod
-    def RandomKey(length=20):
-        return "".join(
-            (
-                random.choice(
-                    random.choice(
-                        (
-                            string.ascii_uppercase,
-                            string.ascii_lowercase,
-                            "".join(map(str, range(0, 9))),
-                        )
-                    )
-                )
-                for i in range(1, length)
-            )
-        )
-
-    @staticmethod
-    def InitPath(root):
-        if not os.path.exists(root):
-            os.makedirs(root)
-
-    def GetPicBase64(self, link):
-        return (
-            link if "http" not in link else bytes.decode(b64encode(self.GetPic(link)))
-        )
-
-    @retry()
-    def GetPic(self, link):
-        return self.session.get(link).content
-
-    def SavePics(self, urls, sid):
-        imageBox = []
-        for index, url in enumerate(urls):
-            url = url if "http" in url else urljoin(f"http://{self.domain}", url)
-            self.info(f"---fetch PIC[{index}]:{url}")
-            with open(f"{self.screenpath}/{sid}_{index}.png", "wb") as imgfile:
-                singelPIC = self.GetPic(url)
-                imgfile.write(singelPIC)
-                imageBox.append(BytesIO(singelPIC))
-        return imageBox
-
     def Run(self):
         while True:
-            self.CheckIfNeedLogin(None, True, False)
-            for qeaid, name in self.types.items():
-                maxpage = self.GetTypeDatas(qeaid, name)
-                self.info(f"MaxPage: {maxpage}")
-                for page in range(1, maxpage):
-                    if not self.GetTypeDatas(qeaid, name, page):
-                        break
+            try:
+                self.__check_if_need_relogin(None, True, False)
+                for qeaid, name in self.types.items():
+                    maxpage = self.__get_type_datas(qeaid, name)
+                    info(f"MaxPage: {maxpage}")
+                    for page in range(1, maxpage):
+                        if not self.__get_type_datas(qeaid, name, page):
+                            break
+            except KeyboardInterrupt:
+                exit()
 
 
 if __name__ == "__main__":
     while True:
+        make_new_tor_id()
         try:
             DarkNet_ChineseTradingNetwork().Run()
         except KeyboardInterrupt:
-            break
+            exit()
         except Exception as e:
+            error(f"sleeping: {e}")
             logreport.delay(str(e))
-            print(f"exit {e}")
             time.sleep(10 * 60)

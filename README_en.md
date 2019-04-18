@@ -1,36 +1,37 @@
 ![mosaic.jpg](media/mosaic.jpg)
-## DarkNet_ChineseTrading - 暗网中文网监控实时爬虫
+## DarkNet_ChineseTrading - A crawler for real-time monitoring of the dark network website.
 ![](https://img.shields.io/badge/language-python3-orange.svg)
 ![](https://img.shields.io/badge/platform-mac|lunix|window-orange.svg)
 
 
-## 监控大屏(grafana快速实现)
+## Monitor screen(by grafana)
 ![](media/grafana.png)
 
 
 
-## 功能
+## Features
 
+- Automatic Tor node switch
 - Automatic registration
 - Automatic Log-in
-- 防封禁
-- ORM交互
-- 事件详情/样本信息录入
-- 事件提醒（telegram）[图文]
+- Anti-ban
+- ORM
+- Event details
+- Event reminder（telegram）[Graphic with Photo]
 
-加入我们：[https://t.me/fordarknetspiderbot](https://t.me/fordarknetspiderbot)
+join us：[https://t.me/fordarknetspiderbot](https://t.me/fordarknetspiderbot)
 
-## 安装(Mac下)
+## Install(Mac)
 
-- ### python环境配置
+- ### python env config
 
-	下载并安装 **anaconda 3.5**
+	download and install the integrated environment , **anaconda 3.5** ,and then install the required pkg
 
 	```
 	pip install -r ./requirements.txt
 	```
 	
-- ### tor安装
+- ### install tor 
 	
 	```
 	brew install tor
@@ -39,37 +40,34 @@
 	cp torrc.sample ./torrc
 	vi torrc
 	```
-	将如下配置添加到 **```torrc```** 后，运行 **```restart_tor.sh```** 开启tor
+	Add the following to configure **```torrc```** and run the command **```restart_tor.sh```** to restart the tor
 	
 	```
-	SOCKSPort 9150 					# socks5代理地址
-	Socks5Proxy 127.0.0.1:1086 		# 科学上网代理地址(如已翻墙可不填)
-	RunAsDaemon 1 					# 开启后台运行
-	ControlPort 9151 				# 开启控制端口
+	SOCKSPort 9150 					# socks5 proxy address
+	Socks5Proxy 127.0.0.1:1086 		# shadowsocks proxy(if you are in China)
+	RunAsDaemon 1 					# running in the background
+	ControlPort 9151 				# open control port
 	
 	```
 	
-- ### 存储环境
+- ### Storage
 
-	安装**```Docker```**后下载**```Redis```** **```Mysql```** 即可
+	install **```Docker```** with **```Redis```** **```Mysql```**
 
-- ### 运行
-	配置```config_dev.py```中的连接设定与```TelegramRobotToken```
+- ### Run
+	configure the connection in ```config_dev.py```and```TelegramRobotToken```
 
 	```
 	mv config_dev.py config.py
-	bash restart_tor.sh
 	bash restart_task.sh
 	python run.py
-	
-	# python tor_ctl.py #定时tor节点切换
 	```
 	
-- ### 运行逻辑
+- ### Running logic
 	
 	![](media/DarkNet.png)
 	
-- ### 运行结果截图
+- ### Result screenshot
 
 	- #### telegram
 		
