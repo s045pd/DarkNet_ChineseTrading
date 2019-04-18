@@ -3,6 +3,7 @@
 ![](https://img.shields.io/badge/language-python3-orange.svg)
 ![](https://img.shields.io/badge/platform-mac|lunix|window-orange.svg)
 
+> ![En_doc](https://github.com/aoii103/DarkNet_ChineseTrading/blob/master/README_en.md)
 
 ## 监控大屏(grafana快速实现)
 ![](media/grafana.png)
