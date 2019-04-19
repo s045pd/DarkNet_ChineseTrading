@@ -282,7 +282,7 @@ class DarkNet_ChineseTradingNetwork(object):
 
     @retry(delay=2, tries=20)
     def __get_type_datas(self, qeaid, name, page=1):
-        url = f"{self.__main_url}/pay/user_area.php?q_ea_id={qeaud}&pagey={page}#pagey"
+        url = f"{self.__main_url}/pay/user_area.php?q_ea_id={qeaid}&pagey={page}#pagey"
         warning(url)
         resp = self.session.get(url)
         resp.encoding = "utf8"
