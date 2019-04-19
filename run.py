@@ -432,22 +432,24 @@ class DarkNet_ChineseTradingNetwork(object):
 
 
 @click.command()
-@click.option("--debug", is_flag=True)
+@click.option("--debug", is_flag=True, help="Print debug log")
 @click.option(
     "--domain",
     default="deepmixaasic2p6vm6f4d4g52e4ve6t37ejtti4holhhkdsmq3jsf3id.onion",
-    help="target domain.",
+    help="Target domain.",
 )
-@click.option("--save_error", is_flag=True)
-@click.option("--update", is_flag=True)
+@click.option("--save_error", is_flag=True, help="Whether to save the error log")
+@click.option(
+    "--update", is_flag=True, help="Whether it has only been updated to crawl"
+)
 def main(debug, domain, save_error, update):
+    make_new_tor_id()
     Config.debug = debug
     DarkNet_ChineseTradingNetwork(domain, save_error, update).Run()
 
 
 if __name__ == "__main__":
     while True:
-        make_new_tor_id()
         try:
             main()
         except KeyboardInterrupt:
