@@ -3,7 +3,7 @@
 ![](https://img.shields.io/badge/language-python3-orange.svg)
 ![](https://img.shields.io/badge/platform-mac|lunix|window-orange.svg)
 
-> ![En_doc](https://github.com/aoii103/DarkNet_ChineseTrading/blob/master/README_en.md)
+> [En_Doc](https://github.com/aoii103/DarkNet_ChineseTrading/blob/master/README_en.md)
 
 ## 监控大屏(grafana快速实现)
 ![](media/grafana.png)
@@ -85,16 +85,16 @@
 - ### 额外命令
 
 	```
-		python3 run.py --help
-		
-		Usage: run.py [OPTIONS]
+	python3 run.py --help
 
-		Options:
-		  --debug        Print debug log
-		  --domain TEXT  Target domain.
-		  --save_error   Whether to save the error log
-		  --update       Whether it has only been updated to crawl
-		  --help         Show this message and exit.
+	Usage: run.py [OPTIONS]
+
+	Options:
+	  --debug        Print debug log
+	  --domain TEXT  Target domain.
+	  --save_error   Whether to save the error log
+	  --update       Whether it has only been updated to crawl
+	  --help         Show this message and exit.
 
 	```	
 	

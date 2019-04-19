@@ -291,7 +291,13 @@ class DarkNet_ChineseTradingNetwork(object):
             self.__check_if_need_relogin(resp)
             self.__save_error(f"{qeaid}_{name}_{page}.html", resp)
             for item, details_url in Parser.get_types(resp):
-                self.__get_details(details_url, Parser.get_type_datas(item), name, page)
+                self.__get_details(
+                    details_url,
+                    Parser.get_type_datas(item),
+                    name,
+                    page,
+                    Parser.get_index(item),
+                )
                 hasres = True
             if page == 1:
                 return Parser.get_max_page(resp, self.__just_update)
@@ -327,7 +333,7 @@ class DarkNet_ChineseTradingNetwork(object):
 
     # @retry((requests.exceptions.ConnectionError))
     @retry(delay=2, tries=20)
-    def __get_details(self, url, muti, name, page):
+    def __get_details(self, url, muti, name, page, index_str):
         resp = self.session.get(url)
         resp.encoding = "utf8"
         if not self.__check_if_need_relogin(resp):
@@ -391,7 +397,7 @@ class DarkNet_ChineseTradingNetwork(object):
                 details = Cursor.create_details(details_datas)
                 self.__make_msg(details, detailContent, detailImages, sid, username)
             else:
-                warning(f'[{name}:{page}]-{real_up_time}- {muti["title"]}')
+                warning(f'[{name}:{page}:{index_str}]-{real_up_time}- {muti["title"]}')
                 Cursor.update_details(details_datas, sid)
         except KeyboardInterrupt:
             exit()

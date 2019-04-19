@@ -149,7 +149,9 @@ class Parser:
     @staticmethod
     def get_reg_date(bs_data, default):
         try:
-            reg_date_str = bs_data.select_one("tr:nth-child(7) > td:nth-child(2)").text
+            reg_date_str = bs_data.select_one(
+                ".v_table_2 tr:nth-child(7) > td:nth-child(2)"
+            ).text
             debug(f"reg_date_str:{reg_date_str}")
             return moment.date(reg_date_str).format("YYYY-MM-DD")
         except Exception as e:
@@ -269,6 +271,14 @@ class Parser:
         except Exception as e:
             error(f"[Parser->get_type_datas]: {e}")
             raise e
+
+    @staticmethod
+    def get_index(bs_item, default="*"):
+        try:
+            return bs_item.select("td")[0].text
+        except Exception as e:
+            error(f"[Parser->get_index]: {e}")
+            return default
 
     @staticmethod
     def get_max_page(resp, just_update):
