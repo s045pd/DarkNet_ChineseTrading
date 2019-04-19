@@ -16,7 +16,7 @@ from io import BytesIO
 from conf import Config
 from task import telegram, logreport, telegram_withpic
 from common import make_new_tor_id, random_key, init_path
-from log import success, info, error, warning
+from log import success, info, error, warning,debug
 from parser import Parser
 from cursor import Cursor
 
@@ -310,12 +310,13 @@ class DarkNet_ChineseTradingNetwork(object):
             error(self.__clean_log(resp))
             # raise
 
-    def __check_if_need_relogin(self, resp, passed=False, needraise=True):
+    def __check_if_need_relogin(self, resp, passed=False, need_raise=True):
 
         if passed or "缓存已经过期" in resp.text:
             """
                 登录超时重新登录
             """
+            debug('Cache Timeout!')
             if self.__first_fetch():
                 self.__login()
 
@@ -323,13 +324,19 @@ class DarkNet_ChineseTradingNetwork(object):
             """
                 账户遭到封锁重新注册
             """
+            debug('User Blocked!')
             self.__reg()
 
         elif "您的回答不正确" in resp.text:
+
+            debug('Answer Error!')
             time.sleep(20)
             self.__reg()
         else:
             return True
+
+        if need_raise:
+                raise ValueError
 
     # @retry((requests.exceptions.ConnectionError))
     @retry(delay=2, tries=20)
@@ -397,8 +404,11 @@ class DarkNet_ChineseTradingNetwork(object):
                 details = Cursor.create_details(details_datas)
                 self.__make_msg(details, detailContent, detailImages, sid, username)
             else:
-                warning(f'[{name}:{page}:{index_str}]-{real_up_time}- {muti["title"]}')
                 Cursor.update_details(details_datas, sid)
+
+            short_msg = f'[{name}:{page}:{index_str}]-{real_up_time}- {muti["title"]}' 
+            success(short_msg) if not details else warning(short_msg)
+
         except KeyboardInterrupt:
             exit()
         except Exception as e:
@@ -407,8 +417,7 @@ class DarkNet_ChineseTradingNetwork(object):
             # raise e
 
     def __make_msg(self, details, content, imgs, sid, username):
-        shortmsg = f"[{details.uptime}] {details.title}"
-        success(shortmsg)
+        
         msg = f"{details.uptime}\n🔥{details.title}\n\nAuthor: {username}\nPrice: ${details.priceUSDT}\nSource: {details.detailurl}\n\n\n${content}\n"
         msg = msg if len(msg) < 1000 else msg[:997] + "..."
         if (
@@ -461,6 +470,6 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             exit()
         except Exception as e:
-            error(f"sleeping: {e}")
+            error(f"sleeping for: [{e}]")
             logreport.delay(str(e))
             time.sleep(10 * 60)
