@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup as bs_4
 # import pudb;pu.db
 import moment
 import requests
-
+import click
 from pyquery import PyQuery as jq
 from retry import retry
 from io import BytesIO
@@ -22,12 +22,13 @@ from cursor import Cursor
 
 
 class DarkNet_ChineseTradingNetwork(object):
-    def __init__(self):
-        self.__domain = "deepmixaasic2p6vm6f4d4g52e4ve6t37ejtti4holhhkdsmq3jsf3id.onion"
+    def __init__(self, domain, need_save_error, just_update):
+        self.__domain = domain
         self.__autim = 0
         self.__sid = ""
-        self.__just_update = False
-        self.__noticerange = 0
+        self.__need_save_error = need_save_error
+        self.__just_update = just_update
+        self.__notice_range = 0
         self.__rootpath = "datas"
         self.__screenpath = "screen_shot"
 
@@ -140,7 +141,6 @@ class DarkNet_ChineseTradingNetwork(object):
             )  # / -> ucp.php
             self.__report_cookies()
             user = Cursor.get_random_user()
-            (self.__reg())
             if not user:
                 self.__reg()
             else:
@@ -150,7 +150,7 @@ class DarkNet_ChineseTradingNetwork(object):
                     self.__reg()
             return True
         except KeyboardInterrupt:
-            pass
+            exit()
         except Exception as e:
             raise e
 
@@ -171,99 +171,110 @@ class DarkNet_ChineseTradingNetwork(object):
 
     @retry(delay=2, tries=20)
     def __reg(self):
-        warning("Reg Confirm")
-        resp = self.__refresh_new_target(
-            self.session.get(
-                self.__reg_url,
-                headers={
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-                    "Accept-Encoding": "gzip, deflate",
-                    "Accept-Language": "en-US,en;q=0.5",
-                    "Cache-Control": "no-cache",
-                    "Connection": "keep-alive",
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Pragma": "no-cache",
-                    "Referer": self.__reg_url,
-                    "Upgrade-Insecure-Requests": "1",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0",
-                },
-            )
-        )
-        token, creation_time = Parser.get_token_and_creation_time(resp)
-        warning("Start Reg")
-        resp = self.session.post(
-            self.__reg_url,
-            data={
-                "agreed": "===好的,我已明白,请跳转到下一页继续注册====",
-                "autim": self.__autim,
-                "change_lang": "",
-                "creation_time": creation_time,
-                "form_token": token,
-            },
-            headers=self.__make_reg_headers(resp),
-        )
-        token, creation_time = Parser.get_token_and_creation_time(resp)
-        qa_answer, qa_confirm_id = Parser.get_qa_answer_and_id(resp)
-        self.__create_random_author()
-        data = {
-            "agreed": "true",
-            "autim": self.__autim,
-            "change_lang": "0",
-            "creation_time": creation_time,
-            "email": "xxxx@xxxx.xxx",
-            "form_token": token,
-            "lang": "zh_cmn_hans",
-            "new_password": self.pwd,
-            "password_confirm": self.pwd,
-            "qa_answer": qa_answer,
-            "qa_confirm_id": qa_confirm_id,
-            "tz": "Asia/Hong_Kong",
-            "tz_date": "UTC+08:00+-+Asia/Brunei+-+"
-            + moment.now().format("DD+MM月+YYYY,+HH:mm"),
-            "submit": " 用户名与密码已填好,+点此提交 ",
-            "username": self.usr,
-        }
-        resp = self.session.post(
-            self.__reg_url, data=data, headers=self.__make_reg_headers(resp)
-        )
         try:
+            warning("Reg Confirm")
+            resp = self.__refresh_new_target(
+                self.session.get(
+                    self.__reg_url,
+                    headers={
+                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+                        "Accept-Encoding": "gzip, deflate",
+                        "Accept-Language": "en-US,en;q=0.5",
+                        "Cache-Control": "no-cache",
+                        "Connection": "keep-alive",
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "Pragma": "no-cache",
+                        "Referer": self.__reg_url,
+                        "Upgrade-Insecure-Requests": "1",
+                        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0",
+                    },
+                )
+            )
+            token, creation_time = Parser.get_token_and_creation_time(resp)
+            warning("Start Reg")
+            resp = self.session.post(
+                self.__reg_url,
+                data={
+                    "agreed": "===好的,我已明白,请跳转到下一页继续注册====",
+                    "autim": self.__autim,
+                    "change_lang": "",
+                    "creation_time": creation_time,
+                    "form_token": token,
+                },
+                headers=self.__make_reg_headers(resp),
+            )
+            token, creation_time = Parser.get_token_and_creation_time(resp)
+            qa_answer, qa_confirm_id = Parser.get_qa_answer_and_id(resp)
+            self.__create_random_author()
+            data = {
+                "agreed": "true",
+                "autim": self.__autim,
+                "change_lang": "0",
+                "creation_time": creation_time,
+                "email": "xxxx@xxxx.xxx",
+                "form_token": token,
+                "lang": "zh_cmn_hans",
+                "new_password": self.pwd,
+                "password_confirm": self.pwd,
+                "qa_answer": qa_answer,
+                "qa_confirm_id": qa_confirm_id,
+                "tz": "Asia/Hong_Kong",
+                "tz_date": "UTC+08:00+-+Asia/Brunei+-+"
+                + moment.now().format("DD+MM月+YYYY,+HH:mm"),
+                "submit": " 用户名与密码已填好,+点此提交 ",
+                "username": self.usr,
+            }
+            resp = self.session.post(
+                self.__reg_url, data=data, headers=self.__make_reg_headers(resp)
+            )
+
             assert "感谢注册" in resp.text
             success("Reg success！")
             Cursor.create_new_user({"user": self.usr, "pwd": self.pwd})
+        except KeyboardInterrupt:
+            exit()
         except AssertionError:
             error("Reg failed！")
             error(self.__clean_log(resp))
-            # self.__save_error("reg.html", resp)
+            self.__save_error("__reg.html", resp)
 
     @retry(delay=2, tries=20)
     def __login(self):
-        """
-            ### 再次尝试
-            1.因为网络问题重试
+        try:
+            """
+                ### 再次尝试
+                1.因为网络问题重试
 
-            ### 重新注册
-            2.因为账户被封重试
-            3.因为账户认证错误重试
-        """
-        warning(f"Login -> [{self.usr}:{self.pwd}]")
-        self.__login_payload.update({"password": self.pwd, "username": self.usr})
-        resp = self.__refresh_new_target(
-            self.session.post(
-                self.__login_url, data=self.__login_payload, verify=False, timeout=120
+                ### 重新注册
+                2.因为账户被封重试
+                3.因为账户认证错误重试
+            """
+            warning(f"Login -> [{self.usr}:{self.pwd}]")
+            self.__login_payload.update({"password": self.pwd, "username": self.usr})
+            resp = self.__refresh_new_target(
+                self.session.post(
+                    self.__login_url,
+                    data=self.__login_payload,
+                    verify=False,
+                    timeout=120,
+                )
             )
-        )
-        if self.usr not in resp.text and "暗网欢迎您" not in resp.text:
-            error(f"Auth Faild: {self.__clean_log(resp)}")
-            # self.__save_error("Autherror.html", resp)
-            if "已被封禁" in resp.text:
-                Cursor.ban_user(self.usr)
-                self.__reg()
-            raise ValueError
-        else:
-            success("Auth Success")
-            self.types = Parser.get_current_type(resp)
+            if self.usr not in resp.text and "暗网欢迎您" not in resp.text:
+                error(f"Auth Faild: {self.__clean_log(resp)}")
+                self.__save_error("__login.html", resp)
+                if "已被封禁" in resp.text:
+                    Cursor.ban_user(self.usr)
+                    self.__reg()
+                raise ValueError
+            else:
+                success("Auth Success")
+                self.types = Parser.get_current_type(resp)
+        except KeyboardInterrupt:
+            exit()
 
     def __save_error(self, filename, resp):
+        if not self.__need_save_error:
+            return
         fullfilepath = f"{self.__rootpath}/{filename}"
         info(f"Html Log Saved to {fullfilepath}")
         with open(fullfilepath, "w") as f:
@@ -280,14 +291,14 @@ class DarkNet_ChineseTradingNetwork(object):
             self.__check_if_need_relogin(resp)
             self.__save_error(f"{qeaid}_{name}_{page}.html", resp)
             for item, details_url in Parser.get_types(resp):
-                self.__get_details(details_url, Parser.get_type_datas(item))
+                self.__get_details(details_url, Parser.get_type_datas(item), name, page)
                 hasres = True
             if page == 1:
                 return Parser.get_max_page(resp, self.__just_update)
             if hasres:
                 return True
         except KeyboardInterrupt:
-            pass
+            exit()
         except Exception as e:
             error(f"__get_type_datas: {e}")
             error(self.__clean_log(resp))
@@ -316,7 +327,7 @@ class DarkNet_ChineseTradingNetwork(object):
 
     # @retry((requests.exceptions.ConnectionError))
     @retry(delay=2, tries=20)
-    def __get_details(self, url, muti):
+    def __get_details(self, url, muti, name, page):
         resp = self.session.get(url)
         resp.encoding = "utf8"
         if not self.__check_if_need_relogin(resp):
@@ -325,7 +336,7 @@ class DarkNet_ChineseTradingNetwork(object):
         bs_data = bs_4(resp.text, "lxml")
         uid, sid = Parser.get_uid_and_sid(bs_data)
 
-        if not all((uid, sid)):
+        if not any((uid, sid)):
             return
 
         details, person, notice, img = Cursor.get_model_details(uid, sid)
@@ -380,12 +391,14 @@ class DarkNet_ChineseTradingNetwork(object):
                 details = Cursor.create_details(details_datas)
                 self.__make_msg(details, detailContent, detailImages, sid, username)
             else:
-                warning(f'-{real_up_time}- {muti["title"]}')
+                warning(f'[{name}:{page}]-{real_up_time}- {muti["title"]}')
                 Cursor.update_details(details_datas, sid)
+        except KeyboardInterrupt:
+            exit()
         except Exception as e:
             error(f"[run-->__get_details]: {e}")
+            self.__save_error("__get_details.html", resp)
             # raise e
-            # self.__save_error("error_264.html", resp)
 
     def __make_msg(self, details, content, imgs, sid, username):
         shortmsg = f"[{details.uptime}] {details.title}"
@@ -397,10 +410,11 @@ class DarkNet_ChineseTradingNetwork(object):
             and moment.date(details.uptime)
             > moment.now()
             .replace(hours=0, minutes=0, seconds=0)
-            .add(days=self.__noticerange)
+            .add(days=self.__notice_range)
         ) or Config.sendForTest:
             if not imgs:
-                telegram.delay(msg, sid, Config.darknetchannelID)
+                # telegram.delay(msg, sid, Config.darknetchannelID)
+                telegram(msg, sid, Config.darknetchannelID)
             else:
                 telegram_withpic(imgs[0], msg, sid, Config.darknetchannelID)
 
@@ -409,20 +423,33 @@ class DarkNet_ChineseTradingNetwork(object):
             try:
                 self.__check_if_need_relogin(None, True, False)
                 for qeaid, name in self.types.items():
-                    maxpage = self.__get_type_datas(qeaid, name)
-                    info(f"MaxPage: {maxpage}")
-                    for page in range(1, maxpage):
+                    max_page = self.__get_type_datas(qeaid, name)
+                    for page in range(2, max_page):
                         if not self.__get_type_datas(qeaid, name, page):
                             break
             except KeyboardInterrupt:
                 exit()
 
 
+@click.command()
+@click.option("--debug", is_flag=True)
+@click.option(
+    "--domain",
+    default="deepmixaasic2p6vm6f4d4g52e4ve6t37ejtti4holhhkdsmq3jsf3id.onion",
+    help="target domain.",
+)
+@click.option("--save_error", is_flag=True)
+@click.option("--update", is_flag=True)
+def main(debug, domain, save_error, update):
+    Config.debug = debug
+    DarkNet_ChineseTradingNetwork(domain, save_error, update).Run()
+
+
 if __name__ == "__main__":
     while True:
         make_new_tor_id()
         try:
-            DarkNet_ChineseTradingNetwork().Run()
+            main()
         except KeyboardInterrupt:
             exit()
         except Exception as e:

@@ -1,6 +1,6 @@
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup as bs_4
-from log import info, error
+from log import info, error, debug
 import re
 import moment
 from common import fix_nums, float_format
@@ -103,8 +103,14 @@ class Parser:
     @staticmethod
     def get_uid_and_sid(bs_data):
         try:
-            uid = fix_nums(bs_data.select_one("tr:nth-child(5) > td:nth-child(2)").text)
+            uid = fix_nums(
+                bs_data.select_one(
+                    ".v_table_2 > tr:nth-child(5) > td:nth-child(2)"
+                ).text
+            )
+            debug(f"uid: {uid}")
             sid = fix_nums(bs_data.select_one("tr:nth-child(3) > td:nth-child(2)").text)
+            debug(f"sid: {sid}")
             return uid, sid
         except Exception as e:
             error(f"[Parser->get_uid_and_sid]: {e}")
@@ -115,16 +121,26 @@ class Parser:
         try:
             personDatas = {
                 "salenums": fix_nums(
-                    bs_data.select_one("tr:nth-child(3) > td:nth-child(4)").text
+                    bs_data.select_one(
+                        ".v_table_2 tr:nth-child(3) > td:nth-child(4)"
+                    ).text
                 ),
                 "totalsales": float_format(
-                    bs_data.select_one("tr:nth-child(5) > td:nth-child(4)").text
+                    bs_data.select_one(
+                        ".v_table_2 tr:nth-child(5) > td:nth-child(4)"
+                    ).text
                 ),
                 "totalbuys": float_format(
-                    bs_data.select_one("tr:nth-child(7) > td:nth-child(4)").text
+                    bs_data.select_one(
+                        ".v_table_2 tr:nth-child(7) > td:nth-child(4)"
+                    ).text
                 ),
             }
-            username = bs_data.select_one("tr:nth-child(3) > td:nth-child(2)").text
+            username = bs_data.select_one(
+                ".v_table_2 tr:nth-child(3) > td:nth-child(2)"
+            ).text
+            debug(f"personDatas: {personDatas}")
+            debug(f"username: {username}")
             return personDatas, username
         except Exception as e:
             error(f"[Parser->get_person_data]: {e}")
@@ -133,9 +149,9 @@ class Parser:
     @staticmethod
     def get_reg_date(bs_data, default):
         try:
-            moment.date(
-                bs_data.select_one("tr:nth-child(7) > td:nth-child(2)").text
-            ).format("YYYY-MM-DD")
+            reg_date_str = bs_data.select_one("tr:nth-child(7) > td:nth-child(2)").text
+            debug(f"reg_date_str:{reg_date_str}")
+            return moment.date(reg_date_str).format("YYYY-MM-DD")
         except Exception as e:
             error(f"[Parser->get_reg_date]: {e}")
             return default
@@ -143,7 +159,9 @@ class Parser:
     @staticmethod
     def get_detail_content(bs_data):
         try:
-            return " ".join(bs_data.select_one(".postbody .content").text.split())
+            content = " ".join(bs_data.select_one(".postbody .content").text.split())
+            debug(f"content: {content}")
+            return content
         except Exception as e:
             error(f"[Parser->get_detail_content]: {e}")
             return ""
@@ -151,7 +169,9 @@ class Parser:
     @staticmethod
     def get_img_urls(bs_data):
         try:
-            return [_.attrs["src"] for _ in bs_data.select(".postbody img")]
+            urls = [_.attrs["src"] for _ in bs_data.select(".postbody img")]
+            debug(urls)
+            return urls
         except Exception as e:
             error(f"[Parser->get_img_urls]: {e}")
             return []
@@ -175,7 +195,7 @@ class Parser:
             real_up_time = (
                 real_up_time if real_up_time._date else to_current_year_datetime
             )
-            return real_up_time
+            return debug(real_up_time)
         except Exception as e:
             error(f"[Parser->get_up_time]: {e}")
             return moment.now()
@@ -183,33 +203,41 @@ class Parser:
     @staticmethod
     def get_details(bs_data, current_year, real_up_time, muti):
         try:
-            return {
-                "lasttime": moment.date(
-                    f"{current_year} "
-                    + bs_data.select_one("tr:nth-child(7) > td:nth-child(6)").text
-                ).format("YYYY-MM-DD HH:mm:ss"),
-                "priceBTC": float_format(
-                    bs_data.select_one("tr:nth-child(3) > td:nth-child(4) > span").text
-                ),
-                "priceUSDT": float_format(
-                    bs_data.select_one(
-                        "tr:nth-child(5) > td:nth-child(4)"
-                    ).text.split()[0]
-                ),
-                "lines": muti["lines"],
-                "uptime": real_up_time.format("YYYY-MM-DD HH:mm:ss"),
-                "hot": muti["hot"],
-                "types": bs_data.select_one("tr:nth-child(5) > td:nth-child(2)").text,
-                "status": bs_data.select_one("tr:nth-child(7) > td:nth-child(2)").text,
-                "oversell": fix_nums(
-                    bs_data.select_one("tr:nth-child(9) > td:nth-child(2)").text,
-                    to=99999,
-                ),
-                "sold": fix_nums(
-                    bs_data.select_one("tr:nth-child(7) > td:nth-child(4)").text,
-                    to=99999,
-                ),
-            }
+            return debug(
+                {
+                    "lasttime": moment.date(
+                        f"{current_year} "
+                        + bs_data.select_one("tr:nth-child(7) > td:nth-child(6)").text
+                    ).format("YYYY-MM-DD HH:mm:ss"),
+                    "priceBTC": float_format(
+                        bs_data.select_one(
+                            "tr:nth-child(3) > td:nth-child(4) > span"
+                        ).text
+                    ),
+                    "priceUSDT": float_format(
+                        bs_data.select_one(
+                            "tr:nth-child(5) > td:nth-child(4)"
+                        ).text.split()[0]
+                    ),
+                    "lines": muti["lines"],
+                    "uptime": real_up_time.format("YYYY-MM-DD HH:mm:ss"),
+                    "hot": muti["hot"],
+                    "types": bs_data.select_one(
+                        "tr:nth-child(5) > td:nth-child(2)"
+                    ).text,
+                    "status": bs_data.select_one(
+                        "tr:nth-child(7) > td:nth-child(2)"
+                    ).text,
+                    "oversell": fix_nums(
+                        bs_data.select_one("tr:nth-child(9) > td:nth-child(2)").text,
+                        to=99999,
+                    ),
+                    "sold": fix_nums(
+                        bs_data.select_one("tr:nth-child(7) > td:nth-child(4)").text,
+                        to=99999,
+                    ),
+                }
+            )
         except Exception as e:
             error(f"[Parser->get_details]: {e}")
             raise e
@@ -220,7 +248,7 @@ class Parser:
             for item in bs_4(resp.text, "lxml").select("table.m_area_a tr"):
                 detail_path = item.select_one("div.length_400>a.text_p_link")
                 if detail_path:
-                    yield item, urljoin(resp.url, detail_path.attrs["href"])
+                    yield debug((item, urljoin(resp.url, detail_path.attrs["href"])))
         except Exception as e:
             error(f"[Parser->get_types]: {e}")
             return []
@@ -228,14 +256,16 @@ class Parser:
     @staticmethod
     def get_type_datas(item):
         try:
-            return {
-                "lines": fix_nums(
-                    item.select_one("td:nth-child(7)").text.replace("天", "")
-                ),
-                "hot": fix_nums(item.select_one("td:nth-child(8)").text),
-                "title": item.select_one("td:nth-child(5)").text,
-                "area": item.select_one("td:nth-child(3)").text,
-            }
+            return debug(
+                {
+                    "lines": fix_nums(
+                        item.select_one("td:nth-child(7)").text.replace("天", "")
+                    ),
+                    "hot": fix_nums(item.select_one("td:nth-child(8)").text),
+                    "title": item.select_one("td:nth-child(5)").text,
+                    "area": item.select_one("td:nth-child(3)").text,
+                }
+            )
         except Exception as e:
             error(f"[Parser->get_type_datas]: {e}")
             raise e
@@ -243,15 +273,17 @@ class Parser:
     @staticmethod
     def get_max_page(resp, just_update):
         try:
-            bs_data = bs_4(resp.text, "lxml")
-            maxpageStr = "".join(
-                bs_data.select_one(".page_b1:nth-last-child(1)").text.split()
-            )
-            return (
-                fix_nums(maxpageStr, to=1, error=1)
-                if maxpageStr and not just_update
+            info("Parsing Max Page")
+            # bs_data = bs_4(resp.text, "lxml")
+            # max_page_str = bs_data.select('.page_b1')[-1].text
+            max_page = (
+                # fix_nums(max_page_str, error=1)
+                30
+                if not just_update
                 else 1
             )
+            info(f"MaxPage: {max_page}")
+            return max_page
         except Exception as e:
             error(f"[Parser->get_max_page]: {e}")
             return 1

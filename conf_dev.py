@@ -1,4 +1,5 @@
 class ConfigDev:
+    debug = True
     mysql_host = "1.2.3.4"
     mysql_port = 3306
     mysql_usr = "root"
