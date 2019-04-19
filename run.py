@@ -71,7 +71,7 @@ class DarkNet_ChineseTradingNetwork(object):
                 self.__domain = domain
                 info(f"Find New Domain: {self.__domain}")
                 Cursor.create_new_domain(self.__domain)
-                return self.session.get(self.main_url)
+                return self.session.get(self.__main_url)
 
             if query:
                 query = dict((item.split("=") for item in query.split("&")))
@@ -86,15 +86,15 @@ class DarkNet_ChineseTradingNetwork(object):
         return resp
 
     def __make_links(self):
-        self.main_url = f"http://{self.__domain}"
-        self.index_url = f"{self.main_url}/index.php"
+        self.__main_url = f"http://{self.__domain}"
+        self.__index_url = f"{self.__main_url}/index.php"
 
     def __report_cookies(self):
         [success(f"{key}:{value}") for key, value in self.session.cookies.items()]
 
     def __to_main_page(self):
-        warning(f"Fetch Main Page: {self.main_url}")
-        return self.session.get(self.main_url)
+        warning(f"Fetch Main Page: {self.__main_url}")
+        return self.session.get(self.__main_url)
 
     def __clear_cookies(self):
         self.session.cookies.clear()
@@ -162,7 +162,7 @@ class DarkNet_ChineseTradingNetwork(object):
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "Content-Type": "application/x-www-form-urlencoded",
-            "Origin": self.main_url,
+            "Origin": self.__main_url,
             "Pragma": "no-cache",
             "Referer": resp.url,
             "Upgrade-Insecure-Requests": "1",
@@ -282,7 +282,7 @@ class DarkNet_ChineseTradingNetwork(object):
 
     @retry(delay=2, tries=20)
     def __get_type_datas(self, qeaid, name, page=1):
-        url = f"http://{self.__domain}/pay/user_area.php?page_y1={page}&q_u_id=0&m_order=&q_ea_id={qeaid}&sid={self.__sid}#page_y1"
+        url = f"{self.__main_url}/pay/user_area.php?q_ea_id={qeaud}&pagey={page}#pagey"
         warning(url)
         resp = self.session.get(url)
         resp.encoding = "utf8"
