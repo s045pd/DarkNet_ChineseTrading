@@ -81,9 +81,24 @@
 	
 		![](media/run.png)
 	
+
+- ### 额外命令
+
+	```
+		python3 run.py --help
+		
+		Usage: run.py [OPTIONS]
+
+		Options:
+		  --debug        Print debug log
+		  --domain TEXT  Target domain.
+		  --save_error   Whether to save the error log
+		  --update       Whether it has only been updated to crawl
+		  --help         Show this message and exit.
+
+	```	
 	
-	
-	
+
 	
 	
 
