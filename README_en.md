@@ -29,6 +29,7 @@ join us：[https://t.me/fordarknetspiderbot](https://t.me/fordarknetspiderbot)
 
 	```
 	pip install -r ./requirements.txt
+	pip install -U 'requests[socks]'
 	```
 	
 - ### install tor 

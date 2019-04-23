@@ -28,7 +28,10 @@
 
 	下载并安装 *`anaconda 3.5`*
 	
-	`pip install -r ./requirements.txt`
+	```
+	pip install -r ./requirements.txt
+	pip install -U 'requests[socks]'
+	```
 	
 - ### tor安装
 	> 当前需更新tor至[0.4.0.0版本]，旧版将有几率无法取得数据

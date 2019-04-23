@@ -16,7 +16,7 @@ from io import BytesIO
 from conf import Config
 from task import telegram, logreport, telegram_withpic
 from common import make_new_tor_id, random_key, init_path
-from log import success, info, error, warning,debug
+from log import success, info, error, warning, debug
 from parser import Parser
 from cursor import Cursor
 
@@ -259,16 +259,17 @@ class DarkNet_ChineseTradingNetwork(object):
                     timeout=120,
                 )
             )
-            if self.usr not in resp.text and "暗网欢迎您" not in resp.text:
+            if self.usr in resp.text and "暗网欢迎您" in resp.text:
+                success("Auth Success")
+                self.types = Parser.get_current_type(resp)
+                # assert self.types != {}
+            else:
                 error(f"Auth Faild: {self.__clean_log(resp)}")
                 self.__save_error("__login.html", resp)
                 if "已被封禁" in resp.text:
                     Cursor.ban_user(self.usr)
                     self.__reg()
                 raise ValueError
-            else:
-                success("Auth Success")
-                self.types = Parser.get_current_type(resp)
         except KeyboardInterrupt:
             exit()
 
@@ -316,27 +317,27 @@ class DarkNet_ChineseTradingNetwork(object):
             """
                 登录超时重新登录
             """
-            debug('Cache Timeout!')
+            debug("Cache Timeout!")
             if self.__first_fetch():
                 self.__login()
 
-        elif "您必须注册并登录才能浏览这个版面" in resp.text:
+        elif "您必须注册并登录才能浏览这个版面" in resp.text or "无效的用户名" in resp.text :
             """
                 账户遭到封锁重新注册
             """
-            debug('User Blocked!')
+            debug("User Blocked!")
             self.__reg()
 
         elif "您的回答不正确" in resp.text:
 
-            debug('Answer Error!')
+            debug("Answer Error!")
             time.sleep(20)
             self.__reg()
         else:
             return True
 
         if need_raise:
-                raise ValueError
+            raise ValueError
 
     # @retry((requests.exceptions.ConnectionError))
     @retry(delay=2, tries=20)
@@ -406,7 +407,7 @@ class DarkNet_ChineseTradingNetwork(object):
             else:
                 Cursor.update_details(details_datas, sid)
 
-            short_msg = f'[{name}:{page}:{index_str}]-{real_up_time}- {muti["title"]}' 
+            short_msg = f'[{name}:{page}:{index_str}]-{real_up_time}- {muti["title"]}'
             success(short_msg) if not details else warning(short_msg)
 
         except KeyboardInterrupt:
@@ -417,7 +418,7 @@ class DarkNet_ChineseTradingNetwork(object):
             # raise e
 
     def __make_msg(self, details, content, imgs, sid, username):
-        
+
         msg = f"{details.uptime}\n🔥{details.title}\n\nAuthor: {username}\nPrice: ${details.priceUSDT}\nSource: {details.detailurl}\n\n\n${content}\n"
         msg = msg if len(msg) < 1000 else msg[:997] + "..."
         if (
@@ -436,6 +437,7 @@ class DarkNet_ChineseTradingNetwork(object):
     def Run(self):
         while True:
             try:
+                make_new_tor_id()
                 self.__check_if_need_relogin(None, True, False)
                 for qeaid, name in self.types.items():
                     max_page = self.__get_type_datas(qeaid, name)
@@ -458,7 +460,7 @@ class DarkNet_ChineseTradingNetwork(object):
     "--update", is_flag=True, help="Whether it has only been updated to crawl"
 )
 def main(debug, domain, save_error, update):
-    make_new_tor_id()
+
     Config.debug = debug
     DarkNet_ChineseTradingNetwork(domain, save_error, update).Run()
 
