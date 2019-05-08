@@ -26,15 +26,17 @@ class Parser:
             autim = bs_data.select_one('input[name="autim"]').attrs["value"]
             sid = bs_data.select_one('input[name="sid"]').attrs["value"]
             form_token = bs_data.select_one('input[name="form_token"]').attrs["value"]
-            creation_time = bs_data.select_one('input[name="creation_time"]').attrs["value"]
+            creation_time = bs_data.select_one('input[name="creation_time"]').attrs[
+                "value"
+            ]
             login = {
                 "redirect": [
                     item.attrs["value"]
                     for item in bs_data.select('input[name="redirect"]')
                 ],
-                "creation_time":creation_time,
-                "form_token":form_token,
-                "sid": sid, 
+                "creation_time": creation_time,
+                "form_token": form_token,
+                "sid": sid,
                 "login": "登录",
                 "autim": autim,
             }

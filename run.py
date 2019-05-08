@@ -337,7 +337,7 @@ class DarkNet_ChineseTradingNetwork(object):
             if self.__first_fetch():
                 self.__login()
 
-        elif "您必须注册并登录才能浏览这个版面" in resp.text or "无效的用户名" in resp.text :
+        elif "您必须注册并登录才能浏览这个版面" in resp.text or "无效的用户名" in resp.text:
             """
                 账户遭到封锁重新注册
             """
