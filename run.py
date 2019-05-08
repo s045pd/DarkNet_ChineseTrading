@@ -94,7 +94,8 @@ class DarkNet_ChineseTradingNetwork(object):
 
     def __to_main_page(self):
         warning(f"Fetch Main Page: {self.__main_url}")
-        return self.session.get(self.__main_url)
+        resp = self.session.get(self.__main_url)
+        return resp
 
     def __clear_cookies(self):
         self.session.cookies.clear()
@@ -257,6 +258,18 @@ class DarkNet_ChineseTradingNetwork(object):
                     data=self.__login_payload,
                     verify=False,
                     timeout=120,
+                    headers={
+                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
+                        "Accept-Encoding": "gzip, deflate",
+                        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+                        "Cache-Control": "no-cache",
+                        "DNT": "1",
+                        "Host": self.__domain,
+                        "Pragma": "no-cache",
+                        "Referer": f"{self.__main_url}/ucp.php?mode=login&autim={self.__login_payload['autim']}",
+                        "Upgrade-Insecure-Requests": "1",
+                        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0"
+                    }
                 )
             )
             if self.usr in resp.text and "暗网欢迎您" in resp.text:

@@ -2,6 +2,7 @@ from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup as bs_4
 from log import info, error, debug
 import re
+import time
 import moment
 from common import fix_nums, float_format
 
@@ -25,14 +26,17 @@ class Parser:
             bs_data = bs_4(resp.text, "lxml")
             autim = bs_data.select_one('input[name="autim"]').attrs["value"]
             sid = bs_data.select_one('input[name="sid"]').attrs["value"]
+            form_token = bs_data.select_one('input[name="form_token"]').attrs["value"]
             login = {
                 "autim": autim,
                 "login": "登录",
+                "creation_time": int(time.time()),
+                "form_token":form_token,
                 "redirect": [
                     item.attrs["value"]
                     for item in bs_data.select('input[name="redirect"]')
                 ],
-                "sid": sid,
+                "sid": sid, 
             }
             login_url = urljoin(resp.url, bs_data.select_one("#login").attrs["action"])
             reg_url = urljoin(resp.url, bs_data.select_one("a.button2").attrs["href"])

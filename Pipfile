@@ -1,0 +1,23 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+requests = "==2.20.0"
+telepot = "==12.7"
+celery = "==4.3.0"
+moment = "==0.8.2"
+peewee = "==3.4.0"
+retry = "==0.9.2"
+stem = "==1.7.1"
+termcolor = "==1.1.0"
+pyquery = "==1.4.0"
+click = "==7.0"
+beautifulsoup4 = "==4.7.1"
+PyMySQL = "==0.9.3"
+
+[requires]
+python_version = "3.7"
