@@ -170,7 +170,7 @@ class DarkNet_ChineseTradingNetwork(object):
             "User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0",
         }
 
-    @retry(delay=2, tries=20)
+    @retry(delay=2, tries=10)
     def __reg(self):
         try:
             warning("Reg Confirm")
@@ -239,7 +239,7 @@ class DarkNet_ChineseTradingNetwork(object):
             error(self.__clean_log(resp))
             self.__save_error("__reg.html", resp)
 
-    @retry(delay=2, tries=20)
+    @retry(delay=2, tries=10)
     def __login(self):
         try:
             """
@@ -258,20 +258,23 @@ class DarkNet_ChineseTradingNetwork(object):
                     data=self.__login_payload,
                     verify=False,
                     timeout=120,
-                    headers={
-                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
-                        "Accept-Encoding": "gzip, deflate",
-                        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-                        "Cache-Control": "no-cache",
-                        "DNT": "1",
-                        "Host": self.__domain,
-                        "Pragma": "no-cache",
-                        "Referer": f"{self.__main_url}/ucp.php?mode=login&autim={self.__login_payload['autim']}",
-                        "Upgrade-Insecure-Requests": "1",
-                        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0"
-                    }
+                    # headers={
+                    #     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
+                    #     "Accept-Encoding": "gzip, deflate",
+                    #     "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+                    #     "Cache-Control": "no-cache",
+                    #     "DNT": "1",
+                    #     "Host": self.__domain,
+                    #     "Pragma": "no-cache",
+                    #     "Origin":self.__main_url,
+                    #     "Referer": f"{self.__main_url}/ucp.php?mode=login&autim={self.__login_payload['autim']}",
+                    #     "Upgrade-Insecure-Requests": "1",
+                    #     "User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0"
+                    # }
                 )
             )
+            debug(resp.history)
+            debug(resp.request.headers)
             if self.usr in resp.text and "暗网欢迎您" in resp.text:
                 success("Auth Success")
                 self.types = Parser.get_current_type(resp)
@@ -294,7 +297,7 @@ class DarkNet_ChineseTradingNetwork(object):
         with open(fullfilepath, "w") as f:
             f.write(resp.text)
 
-    @retry(delay=2, tries=20)
+    @retry(delay=2, tries=10)
     def __get_type_datas(self, qeaid, name, page=1):
         url = f"{self.__main_url}/pay/user_area.php?q_ea_id={qeaid}&pagey={page}#pagey"
         warning(url)
@@ -353,7 +356,7 @@ class DarkNet_ChineseTradingNetwork(object):
             raise ValueError
 
     # @retry((requests.exceptions.ConnectionError))
-    @retry(delay=2, tries=20)
+    @retry(delay=2, tries=10)
     def __get_details(self, url, muti, name, page, index_str):
         resp = self.session.get(url)
         resp.encoding = "utf8"
@@ -485,6 +488,6 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             exit()
         except Exception as e:
-            error(f"sleeping for: [{e}]")
+            error(f"sleeping")
             logreport.delay(str(e))
-            time.sleep(10 * 60)
+            time.sleep(60)
