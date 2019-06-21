@@ -86,7 +86,7 @@ class DarkNet_ChineseTradingNetwork(object):
         return resp
 
     def __make_links(self):
-        self.__main_url = f"http://{self.__domain}"
+        self.__main_url = f"http://{self.__domain}/"
         self.__index_url = f"{self.__main_url}/index.php"
 
     def __report_cookies(self):
@@ -142,7 +142,7 @@ class DarkNet_ChineseTradingNetwork(object):
             )  # / -> ucp.php
             self.__report_cookies()
             user = Cursor.get_random_user()
-            if not user:
+            if not user or True:
                 self.__reg()
             else:
                 self.usr = user.user
@@ -205,39 +205,44 @@ class DarkNet_ChineseTradingNetwork(object):
                 headers=self.__make_reg_headers(resp),
             )
             token, creation_time = Parser.get_token_and_creation_time(resp)
-            qa_answer, qa_confirm_id = Parser.get_qa_answer_and_id(resp)
+            # qa_answer, qa_confirm_id = Parser.get_qa_answer_and_id(resp)
+            confirm_code, confirm_id = Parser.get_captcha(self.__get_pic, resp)
             self.__create_random_author()
             data = {
                 "agreed": "true",
                 "autim": self.__autim,
                 "change_lang": "0",
+                "confirm_code": confirm_code,
+                "confirm_id": [confirm_id, confirm_id],
+                # "confirm_code":'TRBGR',
+                # "confirm_id":['7c3601cd570d2650a89fd33b3b5238d1','7c3601cd570d2650a89fd33b3b5238d1'],
                 "creation_time": creation_time,
                 "email": "xxxx@xxxx.xxx",
                 "form_token": token,
                 "lang": "zh_cmn_hans",
                 "new_password": self.pwd,
                 "password_confirm": self.pwd,
-                "qa_answer": qa_answer,
-                "qa_confirm_id": qa_confirm_id,
+                # "qa_answer": qa_answer,
+                # "qa_confirm_id": qa_confirm_id,
+                "submit": " 用户名与密码已填好,+点此提交 ",
                 "tz": "Asia/Hong_Kong",
                 "tz_date": "UTC+08:00+-+Asia/Brunei+-+"
                 + moment.now().format("DD+MM月+YYYY,+HH:mm"),
-                "submit": " 用户名与密码已填好,+点此提交 ",
                 "username": self.usr,
             }
             resp = self.session.post(
                 self.__reg_url, data=data, headers=self.__make_reg_headers(resp)
             )
-
             assert "感谢注册" in resp.text
             success("Reg success！")
             Cursor.create_new_user({"user": self.usr, "pwd": self.pwd})
         except KeyboardInterrupt:
             exit()
-        except AssertionError:
+        except AssertionError as e:
             error("Reg failed！")
             error(self.__clean_log(resp))
             self.__save_error("__reg.html", resp)
+            raise e
 
     @retry(delay=2, tries=10)
     def __login(self):
@@ -344,7 +349,8 @@ class DarkNet_ChineseTradingNetwork(object):
             debug("User Blocked!")
             self.__reg()
 
-        elif "您的回答不正确" in resp.text:
+        elif "您输入的确认码不正确" in resp.text:
+            # elif "您的回答不正确" in resp.text:
 
             debug("Answer Error!")
             time.sleep(20)

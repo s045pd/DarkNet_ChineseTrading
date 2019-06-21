@@ -1,9 +1,16 @@
-from urllib.parse import urljoin, urlparse
-from bs4 import BeautifulSoup as bs_4
-from log import info, error, debug
+import platform
 import re
+from io import BytesIO
+from urllib.parse import urljoin, urlparse
+
 import moment
+import pytesseract
+from bs4 import BeautifulSoup as bs_4
+from imgcat import imgcat
+from PIL import Image
+
 from common import fix_nums, float_format
+from log import debug, error, info
 
 
 class Parser:
@@ -22,6 +29,9 @@ class Parser:
     @staticmethod
     def get_login_and_reg_payload(resp):
         try:
+            if "500 Internal Privoxy Error" in resp.text:
+                error("Check Your Proxy")
+                exit()
             bs_data = bs_4(resp.text, "lxml")
             autim = bs_data.select_one('input[name="autim"]').attrs["value"]
             sid = bs_data.select_one('input[name="sid"]').attrs["value"]
@@ -87,6 +97,27 @@ class Parser:
         except Exception as e:
             error(f"[Parser->get_qa_answer_and_id]: {e}")
             return (None, None)
+
+    @staticmethod
+    def get_captcha(func, resp):
+        try:
+            bs_data = bs_4(resp.text, "lxml")
+            path = bs_data.select_one(".captcha>img").attrs["src"]
+            confirm_id = re.findall("confirm_id=(.*?)&", path)[0]
+            img_url = urljoin(resp.url, path)
+            img_raw = func(img_url)
+            if platform.system().upper() == "DARWIN":
+                imgcat(img_raw)
+            code = pytesseract.image_to_string(
+                Image.open(BytesIO(img_raw)), lang="snum"
+            ).replace(" ", "")
+            info(f"captcha_code: {code}, confirm_id:{confirm_id}")
+            # assert False
+            return code, confirm_id
+            # return input('code:'),confirm_id
+        except Exception as e:
+            error(f"[Parser->get_captcha]: {e}")
+            return "TRBGR", "7c3601cd570d2650a89fd33b3b5238d1"
 
     @staticmethod
     def get_current_type(resp):

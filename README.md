@@ -34,6 +34,7 @@
 	```
 	
 - ### tor安装
+
 	> 当前需更新tor至[0.4.0.0版本]，旧版将有几率无法取得数据
 	> 如果无法通过如下命令安装最新版，推荐至官网编译安装最新源码包
 	
@@ -52,6 +53,16 @@
 	Socks5Proxy 127.0.0.1:1086 		# 科学上网代理地址(如已翻墙可不填)
 	RunAsDaemon 1 					# 开启后台运行
 	ControlPort 9151 				# 开启控制端口
+	```
+
+- ### OCR(mac)
+
+	> 识别率略低，可在parser.py的get_captcha处替换	
+
+	![](media/captcha.png)
+
+	```
+	brew install tesseract
 	```
 	
 - ### 存储环境

@@ -63,6 +63,14 @@ join us：[https://t.me/fordarknetspiderbot](https://t.me/fordarknetspiderbot)
 	bash restart_task.sh
 	python run.py
 	```
+
+- ### OCR(mac)
+
+	![](media/captcha.png)
+
+	```
+	brew install tesseract
+	```
 	
 - ### Running logic
 	
