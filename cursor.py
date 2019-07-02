@@ -7,7 +7,7 @@ from model import (
     DarkNet_User,
 )
 from peewee import fn
-from log import info, error
+from log import info, error,warning
 
 
 class Cursor:
@@ -45,6 +45,7 @@ class Cursor:
 
     @staticmethod
     def ban_user(usr):
+        warning(f"Ban user: {usr}")
         return (
             DarkNet_User.update({"useful": False})
             .where(DarkNet_User.user == usr)

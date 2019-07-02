@@ -71,7 +71,6 @@ class DarkNet_ChineseTradingNetwork(object):
                 self.__domain = domain
                 info(f"Find New Domain: {self.__domain}")
                 Cursor.create_new_domain(self.__domain)
-                return self.session.get(self.__main_url)
 
             if query:
                 query = dict((item.split("=") for item in query.split("&")))
@@ -142,7 +141,7 @@ class DarkNet_ChineseTradingNetwork(object):
             )  # / -> ucp.php
             self.__report_cookies()
             user = Cursor.get_random_user()
-            if not user or True:
+            if not user:
                 self.__reg()
             else:
                 self.usr = user.user
@@ -205,7 +204,6 @@ class DarkNet_ChineseTradingNetwork(object):
                 headers=self.__make_reg_headers(resp),
             )
             token, creation_time = Parser.get_token_and_creation_time(resp)
-            # qa_answer, qa_confirm_id = Parser.get_qa_answer_and_id(resp)
             confirm_code, confirm_id = Parser.get_captcha(self.__get_pic, resp)
             self.__create_random_author()
             data = {
@@ -214,16 +212,12 @@ class DarkNet_ChineseTradingNetwork(object):
                 "change_lang": "0",
                 "confirm_code": confirm_code,
                 "confirm_id": [confirm_id, confirm_id],
-                # "confirm_code":'TRBGR',
-                # "confirm_id":['7c3601cd570d2650a89fd33b3b5238d1','7c3601cd570d2650a89fd33b3b5238d1'],
                 "creation_time": creation_time,
                 "email": "xxxx@xxxx.xxx",
                 "form_token": token,
                 "lang": "zh_cmn_hans",
                 "new_password": self.pwd,
                 "password_confirm": self.pwd,
-                # "qa_answer": qa_answer,
-                # "qa_confirm_id": qa_confirm_id,
                 "submit": " 用户名与密码已填好,+点此提交 ",
                 "tz": "Asia/Hong_Kong",
                 "tz_date": "UTC+08:00+-+Asia/Brunei+-+"
@@ -263,31 +257,18 @@ class DarkNet_ChineseTradingNetwork(object):
                     data=self.__login_payload,
                     verify=False,
                     timeout=120,
-                    # headers={
-                    #     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
-                    #     "Accept-Encoding": "gzip, deflate",
-                    #     "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-                    #     "Cache-Control": "no-cache",
-                    #     "DNT": "1",
-                    #     "Host": self.__domain,
-                    #     "Pragma": "no-cache",
-                    #     "Origin":self.__main_url,
-                    #     "Referer": f"{self.__main_url}/ucp.php?mode=login&autim={self.__login_payload['autim']}",
-                    #     "Upgrade-Insecure-Requests": "1",
-                    #     "User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0"
-                    # }
                 )
             )
             debug(resp.history)
             debug(resp.request.headers)
+            debug(resp)
             if self.usr in resp.text and "暗网欢迎您" in resp.text:
                 success("Auth Success")
                 self.types = Parser.get_current_type(resp)
-                # assert self.types != {}
             else:
                 error(f"Auth Faild: {self.__clean_log(resp)}")
                 self.__save_error("__login.html", resp)
-                if "已被封禁" in resp.text:
+                if re.findall("已被封禁|无效的密码|违规被处理",resp.text):
                     Cursor.ban_user(self.usr)
                     self.__reg()
                 raise ValueError
@@ -361,7 +342,6 @@ class DarkNet_ChineseTradingNetwork(object):
         if need_raise:
             raise ValueError
 
-    # @retry((requests.exceptions.ConnectionError))
     @retry(delay=2, tries=10)
     def __get_details(self, url, muti, name, page, index_str):
         resp = self.session.get(url)
