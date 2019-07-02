@@ -28,14 +28,19 @@ def error_log(target="", default=None, raise_err=False):
 @error_log()
 def make_new_tor_id():
     info("New Tor ID")
-    controller = Controller.from_port(port=9151)
-    controller.authenticate()
-    controller.signal(Signal.NEWNYM)
-    resp = requests.get(
-        "https://ipinfo.info/html/my_ip_address.php",
-        proxies={"https": "socks5://127.0.0.1:9150"},
-    )
-    success(f'Current IP: {jq(resp.text)("#Text10 > p > span > b").text()}')
+    try:
+        controller = Controller.from_port(port=9151)
+        controller.authenticate()
+        controller.signal(Signal.NEWNYM)
+        resp = requests.get(
+            "https://ipinfo.info/html/my_ip_address.php",
+            proxies={"https": "socks5://127.0.0.1:9150"},
+        )
+        success(f'Current IP: {jq(resp.text)("#Text10 > p > span > b").text()}')
+    except Exception as e:
+        raise
+    finally:
+        controller.close()
 
 
 @error_log()
