@@ -71,6 +71,8 @@ join us：[https://t.me/fordarknetspiderbot](https://t.me/fordarknetspiderbot)
 	```
 	brew install tesseract
 	```
+
+	[snum.traineddata](media/snum.traineddata)
 	
 - ### Running logic
 	

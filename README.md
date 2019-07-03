@@ -65,6 +65,8 @@
 	brew install tesseract
 	```
 	
+	[snum.traineddata](media/snum.traineddata)
+	
 - ### 存储环境
 
 	安装`Docker`后下载`Redis``Mysql`即可
