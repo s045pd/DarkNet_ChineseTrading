@@ -268,10 +268,12 @@ class DarkNet_ChineseTradingNetwork(object):
             else:
                 error(f"Auth Faild: {self.__clean_log(resp)}")
                 self.__save_error("__login.html", resp)
-                if re.findall("已被封禁|无效的密码|违规被处理",resp.text):
+                if re.findall("已被封禁|无效的|违规被处理",resp.text):
                     Cursor.ban_user(self.usr)
-                    self.__reg()
-                raise ValueError
+                    if not self.__reg():
+                        return
+                    else:
+                        raise ValueError
         except KeyboardInterrupt:
             exit()
 
@@ -448,6 +450,8 @@ class DarkNet_ChineseTradingNetwork(object):
                             break
             except KeyboardInterrupt:
                 exit()
+            finally:
+                time.sleep(1)
 
 
 @click.command()

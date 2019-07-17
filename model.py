@@ -6,6 +6,7 @@ import pymysql
 from peewee import *
 
 from conf import Config
+from common import time_delay
 from peewee import __exception_wrapper__
 
 Links = {
@@ -78,6 +79,7 @@ class DarkNet_User(Model):
     pwd = CharField(max_length=20, verbose_name="密码")
     useful = BooleanField(default=True)
     intime = DateTimeField(default=datetime.datetime.now)
+    # effect_time = DateTimeField(default=time_delay)
 
     class Meta:
         database = db

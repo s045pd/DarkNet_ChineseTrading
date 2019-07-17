@@ -1,5 +1,6 @@
 import time
 import requests
+import datetime
 from pyquery import PyQuery as jq
 from stem import Signal
 from stem.control import Controller
@@ -85,3 +86,10 @@ def float_format(data):
         return float(data)
     except Exception as e:
         return 0.0
+
+
+def time_delay(seconds=120):
+    """
+        生效期，防止刚注册的账户被ban
+    """
+    return datetime.datetime.now()+ datetime.timedelta(seconds=seconds)
