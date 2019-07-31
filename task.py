@@ -7,6 +7,7 @@ from urllib.parse import urljoin
 import requests
 import telepot
 from celery import Celery
+from celery.schedules import crontab
 from peewee import fn
 from retry import retry
 
@@ -36,3 +37,27 @@ def telegram_withpic(pic, details, sid, rid):
 @app.task()
 def logreport(msg):
     bot.sendMessage(Config.ReportGroupID, msg)
+
+
+
+
+@app.task()
+def keep_alive():
+    pass
+
+
+
+@app.task()
+def auto_reg():
+    pass
+
+
+
+# app.conf.update(
+#     timezone='Asia/Shanghai',
+#     enable_utc=True,
+#     beat_schedule={
+#         'auto_reg_task':{
+#             'task'
+#         }
+#     })

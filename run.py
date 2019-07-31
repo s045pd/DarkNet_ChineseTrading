@@ -238,6 +238,7 @@ class DarkNet_ChineseTradingNetwork(object):
             self.__save_error("__reg.html", resp)
             raise e
 
+
     @retry(delay=2, tries=10)
     def __login(self):
         try:
@@ -458,7 +459,7 @@ class DarkNet_ChineseTradingNetwork(object):
 @click.option("--debug", is_flag=True, help="Print debug log")
 @click.option(
     "--domain",
-    default="deepmixaasic2p6vm6f4d4g52e4ve6t37ejtti4holhhkdsmq3jsf3id.onion",
+    default="vdh5nrnu7zsis7n2orxft3ax4oamhbtyzcb7srs73xj5t5rxiadavzyd.onion",
     help="Target domain.",
 )
 @click.option("--save_error", is_flag=True, help="Whether to save the error log")
