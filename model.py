@@ -55,11 +55,15 @@ db = RetryMySQLDatabase(**Links, charset="utf8mb4")
 
 class DarkNet_Domain(Model):
     mid = AutoField(primary_key=True)
-    domain = CharField(max_length=180)
+    domain = CharField(max_length=180,unique=True)
     datetime = DateTimeField(default=datetime.datetime.now)
 
     class Meta:
         database = db
+
+    def save(self, *args, **kwargs):
+        self.datetime = datetime.datetime.now()
+        return super(DarkNet_Domain, self).save(*args, **kwargs)
 
 
 class DarkNet_Saler(Model):
@@ -72,6 +76,9 @@ class DarkNet_Saler(Model):
 
     class Meta:
         database = db
+
+
+
 
 
 class DarkNet_User(Model):
