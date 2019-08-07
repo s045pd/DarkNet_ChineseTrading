@@ -7,7 +7,8 @@ from model import (
     DarkNet_User,
 )
 from peewee import fn
-from log import info, error,warning
+from log import info, error, warning, debug
+import moment
 
 
 class Cursor:
@@ -25,18 +26,25 @@ class Cursor:
 
     @staticmethod
     def create_new_domain(domain):
-        return DarkNet_Domain.create(**{"domain": domain})
+        try:
+            return DarkNet_Domain.create(**{"domain": domain})
+        except peewee.IntegrityError:
+            pass
 
     @staticmethod
     def create_new_user(datas):
         return DarkNet_User.create(**datas)
 
     @staticmethod
-    def get_random_user():
+    def get_random_user(last_days=30):
         try:
             return (
                 DarkNet_User.select()
-                .where(DarkNet_User.useful == True)
+                .where(
+                    DarkNet_User.useful == True,
+                    DarkNet_User.intime
+                    >= moment.now().add(days=-last_days).format("YYYY-MM-DD HH:mm:ss"),
+                )
                 .order_by(fn.Rand())
                 .limit(1)[0]
             )
@@ -45,7 +53,7 @@ class Cursor:
 
     @staticmethod
     def ban_user(usr):
-        warning(f"Ban user: {usr}")
+        warning(f"ban user: {usr}")
         return (
             DarkNet_User.update({"useful": False})
             .where(DarkNet_User.user == usr)

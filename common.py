@@ -8,6 +8,11 @@ from log import success, info, error, warning
 import random
 import string
 import os
+from faker import Faker
+from pypinyin import pinyin, lazy_pinyin, Style
+
+
+faker_langs = ["zh_CN", "zh_TW"]
 
 
 def error_log(target="", default=None, raise_err=False):
@@ -69,6 +74,16 @@ def random_key(length=20):
 
 
 @error_log()
+def fake_datas():
+    target = Faker(random.choice(faker_langs))
+    names = list(
+        map(random.choice, pinyin(target.name(), style=Style.TONE2, heteronym=True))
+    )
+    names.append(random_key(5))
+    return "".join(names)
+
+
+@error_log()
 def fix_nums(data, to=9_999_999, error=-1):
     """
         专治超量
@@ -92,4 +107,4 @@ def time_delay(seconds=120):
     """
         生效期，防止刚注册的账户被ban
     """
-    return datetime.datetime.now()+ datetime.timedelta(seconds=seconds)
+    return datetime.datetime.now() + datetime.timedelta(seconds=seconds)

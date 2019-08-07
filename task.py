@@ -39,18 +39,14 @@ def logreport(msg):
     bot.sendMessage(Config.ReportGroupID, msg)
 
 
-
-
 @app.task()
 def keep_alive():
     pass
 
 
-
 @app.task()
 def auto_reg():
     pass
-
 
 
 # app.conf.update(

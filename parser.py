@@ -21,7 +21,7 @@ class Parser:
                 '<meta http-equiv="refresh" content="3;url=(.*?)">', resp.text
             )
             if next_target:
-                info(f"Find Next Target: {next_target[0]}")
+                info(f"find next target: {next_target[0]}")
                 return next_target[0]
         except Exception as e:
             error(f"[Parser->get_next_target]: {e}")
@@ -30,7 +30,7 @@ class Parser:
     def get_login_and_reg_payload(resp):
         try:
             if "500 Internal Privoxy Error" in resp.text:
-                error("Check Your Proxy")
+                error("check your proxies")
                 exit()
             bs_data = bs_4(resp.text, "lxml")
             autim = bs_data.select_one('input[name="autim"]').attrs["value"]
@@ -40,18 +40,23 @@ class Parser:
                 "value"
             ]
             login = {
+                "autim": autim,
+                "creation_time": creation_time,
+                "form_token": form_token,
+                "login": "登录",
+                "password": "",
                 "redirect": [
                     item.attrs["value"]
                     for item in bs_data.select('input[name="redirect"]')
                 ],
-                "creation_time": creation_time,
-                "form_token": form_token,
                 "sid": sid,
-                "login": "登录",
-                "autim": autim,
+                "username": "",
             }
+            debug(f"login payload: {login}")
             login_url = urljoin(resp.url, bs_data.select_one("#login").attrs["action"])
+            debug(f"login url: {login_url}")
             reg_url = urljoin(resp.url, bs_data.select_one("a.button2").attrs["href"])
+            debug(f"register url: {reg_url}")
             return autim, sid, login, login_url, reg_url
         except Exception as e:
             error(f"[Parser->get_login_and_reg_payload]: {e}")
@@ -112,9 +117,8 @@ class Parser:
                 Image.open(BytesIO(img_raw)), lang="snum"
             ).replace(" ", "")
             info(f"captcha_code: {code}, confirm_id:{confirm_id}")
-            # assert False
-            return code, confirm_id
-            # return input('code:'),confirm_id
+            # return code, confirm_id
+            return input("code:"), confirm_id
         except Exception as e:
             error(f"[Parser->get_captcha]: {e}")
             return "TRBGR", "7c3601cd570d2650a89fd33b3b5238d1"
@@ -209,7 +213,7 @@ class Parser:
     def get_img_urls(bs_data):
         try:
             urls = [_.attrs["src"] for _ in bs_data.select(".postbody img")]
-            debug(urls)
+            debug(f"img url:{urls}")
             return urls
         except Exception as e:
             error(f"[Parser->get_img_urls]: {e}")
@@ -321,14 +325,7 @@ class Parser:
     def get_max_page(resp, just_update):
         try:
             info("Parsing Max Page")
-            # bs_data = bs_4(resp.text, "lxml")
-            # max_page_str = bs_data.select('.page_b1')[-1].text
-            max_page = (
-                # fix_nums(max_page_str, error=1)
-                30
-                if not just_update
-                else 1
-            )
+            max_page = 30 if not just_update else 1
             info(f"MaxPage: {max_page}")
             return max_page
         except Exception as e:
