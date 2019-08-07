@@ -66,16 +66,19 @@ class DarkNet_ChineseTradingNetwork(object):
             parse_res = urlparse(next_path)
             domain = parse_res.netloc
             query = parse_res.query
-            if domain and self.domain != domain:
-                self.domain = domain
-                info(f"find new domain: {self.domain}")
-                Cursor.create_new_domain(self.domain)
-
+            if domain:
+                if self.domain != domain:
+                    self.domain = domain
+                    info(f"find new domain: {self.domain}")
+                    Cursor.create_new_domain(self.domain)
+                    
             if query:
                 query = dict((item.split("=") for item in query.split("&")))
                 if "autim" in query:
                     self.autim = int(query["autim"])
                     info(f"autim: {self.autim}")
+
+
 
             self.make_links()
             next_url = urljoin(resp.url, next_path)
@@ -133,7 +136,7 @@ class DarkNet_ChineseTradingNetwork(object):
 
     def update_random_user(self):
         user = Cursor.get_random_user()
-        if user or True:
+        if user:
             self.usr = user.user
             self.pwd = user.pwd
             return True
