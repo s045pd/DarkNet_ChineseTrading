@@ -170,32 +170,11 @@ class DarkNet_ChineseTradingNetwork(object):
             raise e
 
     def make_reg_headers(self, resp):
-        """
-            User-Agent: Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0
-            Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
-            Accept-Language: en-US,en;q=0.5
-            Accept-Encoding: gzip, deflate
-            Referer: http://deepmixl6jyyextuekqvufhaw3k4fv2zygcllo5lciupwdru6cb7xeqd.onion/ucp.php?mode=login&autim=75345389
-            Content-Type: application/x-www-form-urlencoded
-            Content-Length: 276
-            Cookie: PHPSESSID=hai8810ndobaumibebuhv2pjnn; phpbb3_nspa_c=6605444359; phpbb3_nspa_a=1; phpbb3_nspa_u=1; phpbb3_nspa_k=; phpbb3_nspa_sid=5f5afe9058dfa04478a3506fa4365c2b
-            Connection: keep-alive
-            Upgrade-Insecure-Requests: 1
-            Pragma: no-cache
-            Cache-Control: no-cache
-        """
-
         return {
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
-            "Accept-Encoding": "gzip, deflate",
-            "Accept-Language": "en-US,en;q=0.5",
-            "Cache-Control": "no-cache",
             "Content-Type": "application/x-www-form-urlencoded",
             "Origin": self.main_url,
-            "Pragma": "no-cache",
             "Referer": resp.url,
-            "Upgrade-Insecure-Requests": "1",
-            "User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0",
         }
 
     @retry(delay=2, tries=10)

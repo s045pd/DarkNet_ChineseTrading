@@ -1,3 +1,5 @@
+import moment
+import peewee
 from model import (
     DarkNet_Domain,
     DarkNet_DataSale,
@@ -8,7 +10,7 @@ from model import (
 )
 from peewee import fn
 from log import info, error, warning, debug
-import moment
+
 
 
 class Cursor:
