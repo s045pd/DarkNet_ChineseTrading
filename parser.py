@@ -10,7 +10,8 @@ from imgcat import imgcat
 from PIL import Image
 
 from common import fix_nums, float_format
-from log import debug, error, info
+from log import debug, error, info, success
+from conf import Config
 
 
 class Parser:
@@ -135,7 +136,11 @@ class Parser:
                 .replace("查看更多", "")
                 for item in bs_4(resp.text, "lxml").select(".ad_table_b")
             }
-            info(types)
+            info(f"all types: {types}")
+            types = dict(
+                filter(lambda item: item[1] in Config.filterArea, types.items())
+            )
+            success(f"types filter result: {types}")
             return types
         except Exception as e:
             error(f"[Parser->get_current_type]: {e}")

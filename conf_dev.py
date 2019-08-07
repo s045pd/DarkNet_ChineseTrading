@@ -17,6 +17,7 @@ class ConfigDev:
     tor_proxy = "socks5h://127.0.0.1:9150"
 
     sendForTest = False
+    no_porn_img = True
     filterArea = (
         "其它类别",
         "卡料-CVV",

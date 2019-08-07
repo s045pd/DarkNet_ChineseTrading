@@ -18,6 +18,7 @@
 - ORM
 - Event details
 - Event reminder（telegram）[Graphic with Photo]
+- Nude Image Filter
 
 join us：[https://t.me/fordarknetspiderbot](https://t.me/fordarknetspiderbot)
 

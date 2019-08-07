@@ -13,12 +13,14 @@
 ## 功能
 
 - Tor节点切换
-- 自动注册
+- 自动注册(中文式账户)
 - 自动登录
 - 防封禁
 - ORM交互
 - 事件详情/样本信息录入
 - 事件提醒（`telegram`）[图文]
+- 裸体图片过滤
+- 分类爬取
 
 加入我们：[https://t.me/fordarknetspiderbot](https://t.me/fordarknetspiderbot)
 

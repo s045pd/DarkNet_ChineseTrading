@@ -12,7 +12,6 @@ from peewee import fn
 from log import info, error, warning, debug
 
 
-
 class Cursor:
     @staticmethod
     def get_last_domain():

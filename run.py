@@ -19,6 +19,7 @@ from common import make_new_tor_id, random_key, init_path, fake_datas
 from log import success, info, error, warning, debug
 from parser import Parser
 from cursor import Cursor
+import nude
 
 
 class DarkNet_ChineseTradingNetwork(object):
@@ -142,15 +143,21 @@ class DarkNet_ChineseTradingNetwork(object):
         return self.session.get(link).content
 
     def save_pics(self, urls, sid):
-        imageBox = []
+        image_box = []
         for index, url in enumerate(urls):
             url = url if "http" in url else urljoin(f"http://{self.domain}", url)
             info(f"---fetch pic[{index}]:{url}")
-            with open(f"{self.screenpath}/{sid}_{index}.png", "wb") as imgfile:
-                singelPIC = self.get_pic(url)
-                imgfile.write(singelPIC)
-                imageBox.append(BytesIO(singelPIC))
-        return imageBox
+            path = f"{self.screenpath}/{sid}_{index}.png"
+            current_image = None
+            with open(path, "wb") as file:
+                current_image = self.get_pic(url)
+                file.write(current_image)
+                success(f"image saved: {path}")
+            if Config.no_porn_img and nude.is_nude(path):
+                warning("nude detected")
+                continue
+            image_box.append(BytesIO(current_image))
+        return image_box
 
     @retry(delay=2, tries=20)
     def first_fetch(self):
@@ -425,7 +432,6 @@ class DarkNet_ChineseTradingNetwork(object):
             # raise e
 
     def make_msg(self, details, content, imgs, sid, username):
-
         msg = f"{details.uptime}\n🔥{details.title}\n\nAuthor: {username}\nPrice: ${details.priceUSDT}\nSource: {details.detailurl}\n\n\n${content}\n"
         msg = msg if len(msg) < 1000 else msg[:997] + "..."
         if (
