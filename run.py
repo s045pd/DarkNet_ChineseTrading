@@ -124,7 +124,7 @@ class DarkNet_ChineseTradingNetwork(object):
         ]
         strs = "; ".join(
             map(
-                lambda name: f"{name}={self.session.cookies.get(name,'')}",
+                lambda name: f"{name}={self.session.cookies.get(name,'',self.domain)}",
                 cookie_name_space,
             )
         )
@@ -280,7 +280,8 @@ class DarkNet_ChineseTradingNetwork(object):
                     )
                 )
             else:
-                raise ValueError
+                Cursor.ban_user(self.usr)
+                return
             debug(f"login[2] requests header: {resp.request.headers}")
             debug(f"login[2] response header: {resp.headers}")
             if self.usr in resp.text and "暗网欢迎您" in resp.text:
