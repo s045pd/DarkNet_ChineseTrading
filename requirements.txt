@@ -12,3 +12,6 @@ Click==7.0
 beautifulsoup4==4.7.1
 pytesseract==0.2.6
 imgcat==0.3.0
+Faker
+pypinyin
+
