@@ -251,22 +251,25 @@ class Parser:
     @staticmethod
     def get_details(bs_data, current_year, real_up_time, muti):
         try:
+
+            priceUSDT = float_format(
+                bs_data.select_one("tr:nth-child(3) > td:nth-child(4) > span").text
+            )
+            priceBTC = float_format(
+                bs_data.select_one("tr:nth-child(5) > td:nth-child(4)").text.split()[0]
+            )
+
+            if priceBTC > priceUSDT:
+                priceUSDT, priceBTC = priceBTC, priceUSDT
+
             return debug(
                 {
                     "lasttime": moment.date(
                         f"{current_year} "
                         + bs_data.select_one("tr:nth-child(7) > td:nth-child(6)").text
                     ).format("YYYY-MM-DD HH:mm:ss"),
-                    "priceBTC": float_format(
-                        bs_data.select_one(
-                            "tr:nth-child(3) > td:nth-child(4) > span"
-                        ).text
-                    ),
-                    "priceUSDT": float_format(
-                        bs_data.select_one(
-                            "tr:nth-child(5) > td:nth-child(4)"
-                        ).text.split()[0]
-                    ),
+                    "priceUSDT": priceUSDT,
+                    "priceBTC": priceBTC,
                     "lines": muti["lines"],
                     "uptime": real_up_time.format("YYYY-MM-DD HH:mm:ss"),
                     "hot": muti["hot"],

@@ -10,6 +10,8 @@ import string
 import os
 from faker import Faker
 from pypinyin import pinyin, lazy_pinyin, Style
+from PIL import Image
+import _io
 
 
 faker_langs = ["zh_CN", "zh_TW"]
@@ -108,3 +110,20 @@ def time_delay(seconds=120):
         生效期，防止刚注册的账户被ban
     """
     return datetime.datetime.now() + datetime.timedelta(seconds=seconds)
+
+
+def read_exif_gps(file: _io.BytesIO):
+    def format(datas):
+        return (
+            datas[0][0]
+            + (datas[1][0] // datas[1][1]) / 60
+            + (datas[1][0] % datas[1][1]) / 3600
+        )
+
+    gps_key = 34853
+    gps_data = Image.open(file).getexif().get(gps_key, None)
+    if gps_data:
+        return (
+            (1 if gps_data[3] == "E" else -1) * format(gps_data[4]),
+            (1 if gps_data[1] == "N" else -1) * format(gps_data[2]),
+        )

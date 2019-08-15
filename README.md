@@ -19,8 +19,9 @@
 - ORM交互
 - 事件详情/样本信息录入
 - 事件提醒（`telegram`）[图文]
-- 裸体图片过滤(保存但不发送)
 - 分类爬取
+- 裸体图片过滤(保存但不发送)
+- 残留EXIF-GPS信息提取
 
 加入我们：[https://t.me/fordarknetspiderbot](https://t.me/fordarknetspiderbot)
 

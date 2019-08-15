@@ -14,12 +14,13 @@ from pyquery import PyQuery as jq
 from retry import retry
 from io import BytesIO
 from conf import Config
-from task import telegram, logreport, telegram_withpic
+from task import telegram, logreport, telegram_with_pic
 from common import make_new_tor_id, random_key, init_path, fake_datas
 from log import success, info, error, warning, debug
 from parser import Parser
 from cursor import Cursor
 import nude
+from imgcat import imgcat
 
 
 class DarkNet_ChineseTradingNetwork(object):
@@ -71,14 +72,12 @@ class DarkNet_ChineseTradingNetwork(object):
                     self.domain = domain
                     info(f"find new domain: {self.domain}")
                     Cursor.create_new_domain(self.domain)
-                    
+
             if query:
                 query = dict((item.split("=") for item in query.split("&")))
                 if "autim" in query:
                     self.autim = int(query["autim"])
                     info(f"autim: {self.autim}")
-
-
 
             self.make_links()
             next_url = urljoin(resp.url, next_path)
@@ -143,23 +142,33 @@ class DarkNet_ChineseTradingNetwork(object):
 
     @retry()
     def get_pic(self, link):
-        return self.session.get(link).content
+        warning(f"pic url: {link}")
+        resp = self.session.get(link, headers={"Cookie": self.get_cookie_string()})
+        debug(f"pic resp types: {resp.headers.get('Content-Type','')}")
+        pic_data = resp.content
+        if Config.debug:
+            imgcat(pic_data)
+        return pic_data
 
     def save_pics(self, urls, sid):
         image_box = []
         for index, url in enumerate(urls):
-            url = url if "http" in url else urljoin(f"http://{self.domain}", url)
-            info(f"---fetch pic[{index}]:{url}")
-            path = f"{self.screenpath}/{sid}_{index}.png"
-            current_image = None
-            with open(path, "wb") as file:
-                current_image = self.get_pic(url)
-                file.write(current_image)
-                success(f"image saved: {path}")
-            if Config.no_porn_img and nude.is_nude(path):
-                warning("nude detected")
-                continue
-            image_box.append(BytesIO(current_image))
+            try:
+                current_image = None
+                url = url if "http" in url else urljoin(f"http://{self.domain}", url)
+                info(f"---fetch pic[{index}]:{url}")
+                path = f"{self.screenpath}/{sid}_{index}.png"
+                with open(path, "wb") as file:
+                    current_image = self.get_pic(url)
+                    file.write(current_image)
+                    success(f"image saved: {path}")
+                if Config.no_porn_img and nude.is_nude(path):
+                    warning("nude detected")
+                    continue
+                image_box.append(BytesIO(current_image))
+            except Exception as e:
+                error(e)
+        success(f"images: {image_box}")
         return image_box
 
     @retry(delay=2, tries=20)
@@ -370,6 +379,7 @@ class DarkNet_ChineseTradingNetwork(object):
         uid, sid = Parser.get_uid_and_sid(bs_data)
 
         if not any((uid, sid)):
+            error("uid&sid lost")
             return
 
         details, person, notice, img = Cursor.get_model_details(uid, sid)
@@ -433,23 +443,21 @@ class DarkNet_ChineseTradingNetwork(object):
             exit()
         except Exception as e:
             error(f"[run-->__get_details]: {e}")
-            # raise e
 
     def make_msg(self, details, content, imgs, sid, username):
-        msg = f"{details.uptime}\n🔥{details.title}\n\nAuthor: {username}\nPrice: ${details.priceUSDT}\nSource: {details.detailurl}\n\n\n${content}\n"
+        warning(f"send msg {sid} img: {len(imgs)}")
+        msg = f"{details.uptime}\n🔥{details.title}\n\nAuthor: {username}\nPrice: ${details.priceUSDT}\nSource: {details.detailurl}\n\n\n>>> {content}\n"
         msg = msg if len(msg) < 1000 else msg[:997] + "..."
         if (
-            details.area in Config.filterArea
-            and moment.date(details.uptime)
+            moment.date(details.uptime)
             > moment.now()
             .replace(hours=0, minutes=0, seconds=0)
             .add(days=self.notice_range)
         ) or Config.sendForTest:
             if not imgs:
-                # telegram.delay(msg, sid, Config.darknetchannelID)
                 telegram(msg, sid, Config.darknetchannelID)
             else:
-                telegram_withpic(imgs[0], msg, sid, Config.darknetchannelID)
+                telegram_with_pic(imgs, msg, sid, Config.darknetchannelID)
 
     def run(self):
         while True:

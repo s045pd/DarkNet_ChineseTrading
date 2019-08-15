@@ -3,6 +3,8 @@ import time
 from base64 import b64encode
 from pprint import pprint
 from urllib.parse import urljoin
+from log import success, error
+import copy
 
 import requests
 import telepot
@@ -13,6 +15,8 @@ from retry import retry
 
 from conf import Config
 from model import DarkNet_DataSale, DarkNet_IMGS, DarkNet_Notice, DarkNet_User
+from common import read_exif_gps
+from io import BytesIO
 
 telepot.api.set_proxy(Config.telegram_proxy)
 bot = telepot.Bot(Config.telegram_token)
@@ -27,11 +31,31 @@ def telegram(msg, sid, rid):
 
 
 @app.task()
-def telegram_withpic(pic, details, sid, rid):
-    # bot.sendDocument(rid,pic,details) # unpretty~
-    bot.sendPhoto(rid, pic, details)
-    query = DarkNet_Notice.update({"telegram": True}).where(DarkNet_Notice.sid == sid)
-    query.execute()
+def telegram_with_pic(pics, details, sid, rid):
+    try:
+        target = pics[0]
+        gps_data = None
+
+        for pic in pics:
+            try:
+                gps_data = read_exif_gps(copy.deepcopy(pic))
+                if gps_data:
+                    success(f"find gps data: {gps_data}")
+                    target = pic
+                    break
+            except Exception as e:
+                error(e)
+        bot.sendPhoto(
+            rid, target, details + (f"\nEXIF GPS: {gps_data}" if gps_data else "")
+        )
+        if gps_data:
+            bot.sendLocation(rid, *gps_data[::-1])
+        query = DarkNet_Notice.update({"telegram": True}).where(
+            DarkNet_Notice.sid == sid
+        )
+        query.execute()
+    except Exception as e:
+        error(f"telegram_with_pic: {e}")
 
 
 @app.task()
