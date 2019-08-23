@@ -129,7 +129,7 @@ class DarkNet_DataSale(Model):
     oversell = BigIntegerField(verbose_name="出售数量（出售数量）")  # 出售数量
     sold = IntegerField(verbose_name="已经出售（本单成交）")  # 已经出售
 
-    img = ForeignKeyField(DarkNet_IMGS, on_delete="None", verbose_name="图片Base64")
+    img = ForeignKeyField(DarkNet_IMGS, on_delete=None, verbose_name="图片Base64")
     notice = ForeignKeyField(DarkNet_Notice, verbose_name="消息提醒", on_delete="CASCADE")
 
     class Meta:
