@@ -118,8 +118,8 @@ class Parser:
                 Image.open(BytesIO(img_raw)), lang="snum"
             ).replace(" ", "")
             info(f"captcha_code: {code}, confirm_id:{confirm_id}")
-            # return code, confirm_id
-            return input("code:"), confirm_id
+            return code, confirm_id
+            # return input("code:"), confirm_id
         except Exception as e:
             error(f"[Parser->get_captcha]: {e}")
             return "TRBGR", "7c3601cd570d2650a89fd33b3b5238d1"
