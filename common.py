@@ -36,8 +36,8 @@ def error_log(target="", default=None, raise_err=False):
 @error_log()
 def make_new_tor_id():
     info("New Tor ID")
+    controller = Controller.from_port(port=9151)
     try:
-        controller = Controller.from_port(port=9151)
         controller.authenticate()
         controller.signal(Signal.NEWNYM)
         resp = requests.get(
