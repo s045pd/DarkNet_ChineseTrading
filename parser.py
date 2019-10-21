@@ -12,6 +12,7 @@ from PIL import Image
 from common import fix_nums, float_format
 from log import debug, error, info, success
 from conf import Config
+from exception import *
 
 
 class Parser:
@@ -19,11 +20,18 @@ class Parser:
     def get_next_target(resp):
         try:
             next_target = re.findall(
-                '<meta http-equiv="refresh" content="3;url=(.*?)">', resp.text
+                '<meta http-equiv="refresh".*?content=".{0,3};(.*?)">', resp.text
             )
             if next_target:
-                info(f"find next target: {next_target[0]}")
-                return next_target[0]
+                next_url = (
+                    next_target[0]
+                    .replace("bcp.php", "ucp.php")
+                    .replace("ycp.php", "ucp.php")
+                )
+                if next_url.startswith("url="):
+                    next_url = next_url[4:]
+                info(f"next: {next_url}")
+                return next_url
         except Exception as e:
             error(f"[Parser->get_next_target]: {e}")
 
@@ -31,17 +39,20 @@ class Parser:
     def get_login_and_reg_payload(resp):
         try:
             if "500 Internal Privoxy Error" in resp.text:
-                error("check your proxies")
-                exit()
+                raise PROXY_ERROR()
+            if "用户控制面板 - 登录" not in resp.text:
+                raise MAIN_PAGE_ERROR()
+            else:
+                success("it's main page")
             bs_data = bs_4(resp.text, "lxml")
-            autim = bs_data.select_one('input[name="autim"]').attrs["value"]
+            # autim = bs_data.select_one('input[name="autim"]').attrs["value"]
             sid = bs_data.select_one('input[name="sid"]').attrs["value"]
             form_token = bs_data.select_one('input[name="form_token"]').attrs["value"]
             creation_time = bs_data.select_one('input[name="creation_time"]').attrs[
                 "value"
             ]
             login = {
-                "autim": autim,
+                # "autim": autim,
                 "creation_time": creation_time,
                 "form_token": form_token,
                 "login": "登录",
@@ -58,7 +69,8 @@ class Parser:
             debug(f"login url: {login_url}")
             reg_url = urljoin(resp.url, bs_data.select_one("a.button2").attrs["href"])
             debug(f"register url: {reg_url}")
-            return autim, sid, login, login_url, reg_url
+            # return autim, sid, login, login_url, reg_url
+            return sid, login, login_url, reg_url
         except Exception as e:
             error(f"[Parser->get_login_and_reg_payload]: {e}")
             raise e
@@ -69,7 +81,7 @@ class Parser:
             sid = re.findall('sid=(.*?)"', resp.text)
             if sid:
                 info(f"sid: {sid[0]}")
-                return sid[0]
+                return sid[0].split("&")[0]
             else:
                 return default
         except Exception as e:
@@ -128,13 +140,12 @@ class Parser:
     def get_current_type(resp):
         try:
             types = {
-                item.select_one(".index_list_title")
-                .attrs["href"]
+                item.attrs["href"]
                 .split("=")[1]
-                .split("&")[0]: item.select_one("tr:nth-child(1) > td")
-                .text.split()[0]
+                .split("&")[0]: item.text.split()[0]
                 .replace("查看更多", "")
-                for item in bs_4(resp.text, "lxml").select(".ad_table_b")
+                for item in bs_4(resp.text, "lxml").select(".text_index_top")
+                if item.attrs["href"].startswith("/pay/user_area.php?q_ea_id=")
             }
             info(f"all types: {types}")
             types = dict(

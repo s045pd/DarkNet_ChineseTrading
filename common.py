@@ -1,18 +1,18 @@
-import time
-import requests
 import datetime
-from pyquery import PyQuery as jq
-from stem import Signal
-from stem.control import Controller
-from log import success, info, error, warning
+import os
 import random
 import string
-import os
-from faker import Faker
-from pypinyin import pinyin, lazy_pinyin, Style
-from PIL import Image
-import _io
+import time
 
+import requests
+from faker import Faker
+from PIL import Image
+from pypinyin import Style, lazy_pinyin, pinyin
+from stem import Signal
+from stem.control import Controller
+
+import _io
+from log import error, info, success, warning
 
 faker_langs = ["zh_CN", "zh_TW"]
 
@@ -35,16 +35,15 @@ def error_log(target="", default=None, raise_err=False):
 
 @error_log()
 def make_new_tor_id():
-    info("New Tor ID")
+    info("reload tor")
     try:
         controller = Controller.from_port(port=9151)
         controller.authenticate()
         controller.signal(Signal.NEWNYM)
         resp = requests.get(
-            "https://ipinfo.info/html/my_ip_address.php",
-            proxies={"https": "socks5://127.0.0.1:9150"},
+            "http://icanhazip.com/", proxies={"https": "socks5://127.0.0.1:9150"}
         )
-        success(f'Current IP: {jq(resp.text)("#Text10 > p > span > b").text()}')
+        success(f"current ip: {resp.text.strip()}")
     except Exception as e:
         raise
     finally:

@@ -18,18 +18,7 @@ class ConfigDev:
 
     sendForTest = False
     no_porn_img = True
-    filterArea = (
-        "其它类别",
-        "卡料-CVV",
-        "基础知识",
-        "实体物品",
-        "影视-色情",
-        "技术-教学",
-        "数据-情报",
-        "服务-接单",
-        "私人专拍",
-        "虚拟资源",
-    )
+    filterArea = ("其它", "卡料", "基础", "实体", "影视", "技术", "数据", "服务", "私拍", "虚拟")
 
 
 Config = ConfigDev

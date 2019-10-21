@@ -3,38 +3,40 @@ import re
 import sys
 import time
 from base64 import b64encode
+from io import BytesIO
+from parser import Parser
 from urllib.parse import urljoin, urlparse
-from bs4 import BeautifulSoup as bs_4
+
+import click
 
 # import pudb;pu.db
 import moment
+import nude
 import requests
-import click
+from bs4 import BeautifulSoup as bs_4
+from imgcat import imgcat
 from pyquery import PyQuery as jq
 from retry import retry
-from io import BytesIO
+
+from common import fake_datas, init_path, make_new_tor_id, random_key
 from conf import Config
-from task import telegram, logreport, telegram_with_pic
-from common import make_new_tor_id, random_key, init_path, fake_datas
-from log import success, info, error, warning, debug
-from parser import Parser
 from cursor import Cursor
-import nude
-from imgcat import imgcat
+from log import debug, error, info, success, warning
+from task import logreport, telegram, telegram_with_pic
+from exception import *
 
 
 class DarkNet_ChineseTradingNetwork(object):
     def __init__(self, domain, just_update):
         self.domain = domain
-        self.autim = 0
         self.sid = ""
         self.just_update = just_update
+        self.need_re_register = False
         self.notice_range = 0
         self.rootpath = "datas"
         self.screenpath = "screen_shot"
         list(map(init_path, [self.rootpath, self.screenpath]))
         self.init_domain()
-        self.session = self.new_session()
 
     def init_domain(self):
         last_domain = Cursor.get_last_domain()
@@ -48,6 +50,7 @@ class DarkNet_ChineseTradingNetwork(object):
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.5",
             "Accept-Encoding": "gzip, deflate",
+            # "Host": self.domain,
             "Connection": "keep-alive",
             "Upgrade-Insecure-Requests": "1",
             "Pragma": "no-cache",
@@ -70,14 +73,12 @@ class DarkNet_ChineseTradingNetwork(object):
             if domain:
                 if self.domain != domain:
                     self.domain = domain
-                    info(f"find new domain: {self.domain}")
+                    success(f"new domain: {self.domain}")
+                    self.update_cookie_domain()
                     Cursor.create_new_domain(self.domain)
 
             if query:
                 query = dict((item.split("=") for item in query.split("&")))
-                if "autim" in query:
-                    self.autim = int(query["autim"])
-                    info(f"autim: {self.autim}")
 
             self.make_links()
             next_url = urljoin(resp.url, next_path)
@@ -117,11 +118,15 @@ class DarkNet_ChineseTradingNetwork(object):
 
     def get_cookie_string(self):
         cookie_name_space = [
+            "nix",
+            "random",
+            "token",
             "PHPSESSID",
             "phpbb3_nspa_c",
             "phpbb3_nspa_a",
             "phpbb3_nspa_u",
             "phpbb3_nspa_k",
+            "phpbb3_nspa_track",
             "phpbb3_nspa_sid",
         ]
         strs = "; ".join(
@@ -133,8 +138,15 @@ class DarkNet_ChineseTradingNetwork(object):
         debug(f"cookies string: {strs}")
         return strs
 
+    def update_cookie_domain(self):
+        jar = requests.cookies.RequestsCookieJar()
+        for key, value in self.session.cookies.items():
+            jar.set(key, value, domain=self.domain)
+        self.session.cookies = jar
+        success(f"update all cookies to current domain: {self.session.cookies}")
+
     def update_random_user(self):
-        user = Cursor.get_random_user()
+        user = Cursor.get_random_user(180)
         if user:
             self.usr = user.user
             self.pwd = user.pwd
@@ -144,6 +156,7 @@ class DarkNet_ChineseTradingNetwork(object):
     def get_pic(self, link):
         warning(f"pic url: {link}")
         resp = self.session.get(link, headers={"Cookie": self.get_cookie_string()})
+        # resp = self.session.get(link)
         debug(f"pic resp types: {resp.headers.get('Content-Type','')}")
         pic_data = resp.content
         if Config.debug:
@@ -175,18 +188,15 @@ class DarkNet_ChineseTradingNetwork(object):
     def first_fetch(self):
         try:
             warning(f"domain: {self.domain}")
-            self.clear_cookies()
-            self.autim, self.sid, self.login_payload, self.login_url, self.register_url = Parser.get_login_and_reg_payload(
+            self.sid, self.login_payload, self.login_url, self.register_url = Parser.get_login_and_reg_payload(
                 self.refresh_new_target(self.to_main_page())
             )  # / -> ucp.php
             self.report_cookies()
             if not self.update_random_user():  # or random.choice([1, 0]):
                 self.register()
             return True
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, PROXY_ERROR):
             exit()
-        except Exception as e:
-            raise e
 
     def make_reg_headers(self, resp):
         return {
@@ -216,7 +226,6 @@ class DarkNet_ChineseTradingNetwork(object):
                 self.register_url,
                 data={
                     "agreed": "===好的,我已明白,请跳转到下一页继续注册====",
-                    "autim": self.autim,
                     "change_lang": "",
                     "creation_time": creation_time,
                     "form_token": token,
@@ -242,7 +251,6 @@ class DarkNet_ChineseTradingNetwork(object):
                 "creation_time": creation_time,
                 "form_token": token,
                 "submit": " 用户名与密码已填好, 点此提交 ",
-                "autim": self.autim,
             }
             resp = self.session.post(
                 self.register_url, data=data, headers=self.make_reg_headers(resp)
@@ -275,7 +283,7 @@ class DarkNet_ChineseTradingNetwork(object):
                 data=self.login_payload,
                 headers={
                     "Content-Type": "application/x-www-form-urlencoded",
-                    "Referer": f"http://{self.domain}/ucp.php?mode=login&autim={self.autim}",
+                    "Referer": f"http://{self.domain}/ucp.php?mode=login",
                 },
                 allow_redirects=False,
             )
@@ -293,6 +301,7 @@ class DarkNet_ChineseTradingNetwork(object):
                 )
             else:
                 Cursor.ban_user(self.usr)
+                self.update_random_user()
                 return
             debug(f"login[2] requests header: {resp.request.headers}")
             debug(f"login[2] response header: {resp.headers}")
@@ -303,16 +312,19 @@ class DarkNet_ChineseTradingNetwork(object):
                 error(f"Auth Faild: {self.clean_log(resp)}")
                 if re.findall("已被封禁|无效的|违规被处理", resp.text):
                     Cursor.ban_user(self.usr)
-                    if not self.register():
-                        return
-                    else:
-                        raise ValueError
+                    self.update_random_user()
+                    # if not self.register():
+                    #     return
+                    # else:
+                    #     raise ValueError
         except KeyboardInterrupt:
             exit()
 
     @retry(delay=2, tries=10)
     def get_type_datas(self, qeaid, name, page=1):
-        url = f"{self.main_url}/pay/user_area.php?q_ea_id={qeaid}&pagey={page}#pagey"
+        url = urljoin(
+            self.main_url, f"/pay/user_area.php?q_ea_id={qeaid}&pagey={page}#pagey"
+        )
         warning(f"get_type_datas: {url}")
         resp = self.session.get(
             url,
@@ -321,6 +333,7 @@ class DarkNet_ChineseTradingNetwork(object):
                 "Cookie": self.get_cookie_string(),
             },
         )
+        info(resp.headers.get("Set-Cookie", ""))
         resp.encoding = "utf8"
         hasres = False
         try:
@@ -356,10 +369,17 @@ class DarkNet_ChineseTradingNetwork(object):
                 self.login()
 
         elif "您必须注册并登录才能浏览这个版面" in resp.text or "无效的用户名" in resp.text:
+            import pudb
+
+            pudb.set_trace()
             """
                 账户遭到封锁重新注册
             """
-            self.register()
+            # if self.need_re_register:
+            #     self.register()
+            # else:
+            #     self.login()
+            pass
         else:
             return True
 
@@ -371,6 +391,7 @@ class DarkNet_ChineseTradingNetwork(object):
         resp = self.session.get(
             url, headers={"Referer": referer_url, "Cookie": self.get_cookie_string()}
         )
+        info(resp.headers.get("Set-Cookie", ""))
         resp.encoding = "utf8"
         if not self.check_if_need_relogin(resp):
             return
@@ -445,7 +466,7 @@ class DarkNet_ChineseTradingNetwork(object):
             error(f"[run-->__get_details]: {e}")
 
     def make_msg(self, details, content, imgs, sid, username):
-        warning(f"send msg {sid} img: {len(imgs)}")
+        warning(f"send msg {sid} img: {len(imgs) if imgs else 0}")
         msg = f"{details.uptime}\n🔥{details.title}\n\nAuthor: {username}\nPrice: ${details.priceUSDT}\nSource: {details.detailurl}\n\n\n>>> {content}\n"
         msg = msg if len(msg) < 1000 else msg[:997] + "..."
         if (
@@ -462,6 +483,7 @@ class DarkNet_ChineseTradingNetwork(object):
     def run(self):
         while True:
             try:
+                self.session = self.new_session()
                 make_new_tor_id()
                 self.check_if_need_relogin(None, True, False)
                 for qeaid, name in self.types.items():
@@ -479,7 +501,7 @@ class DarkNet_ChineseTradingNetwork(object):
 @click.option("--debug", is_flag=True, help="Print debug log")
 @click.option(
     "--domain",
-    default="deepmixaasic2p6vm6f4d4g52e4ve6t37ejtti4holhhkdsmq3jsf3id.onion",
+    default="deepmix4izfgaal2mkfpn3cbjxxcs6wyp3lcgp6ksjhtt75vn2gangqd.onion",
     help="Target domain.",
 )
 @click.option(

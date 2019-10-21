@@ -47,7 +47,7 @@ class Cursor:
                     >= moment.now().add(days=-last_days).format("YYYY-MM-DD HH:mm:ss"),
                 )
                 .order_by(fn.Rand())
-                .limit(1)[0]
+                .limit(10)[0]
             )
         except Exception as e:
             error(f"[Cursor->get_random_user]: {e}")
