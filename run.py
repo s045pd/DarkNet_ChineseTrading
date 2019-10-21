@@ -505,7 +505,7 @@ class DarkNet_ChineseTradingNetwork(object):
     help="Target domain.",
 )
 @click.option(
-    "--update", is_flag=True, help="Whether it has only been updated to crawl"
+    "--update", is_flag=True, help="Whether it has only been updated to crawler"
 )
 def main(debug, domain, update):
     Config.debug = debug
@@ -521,4 +521,4 @@ if __name__ == "__main__":
         except Exception as e:
             error(f"sleeping")
             logreport.delay(str(e))
-            time.sleep(60)
+            time.sleep(1)
