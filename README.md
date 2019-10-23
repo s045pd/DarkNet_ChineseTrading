@@ -4,6 +4,7 @@
 ![](https://img.shields.io/badge/platform-mac|lunix|window-orange.svg)
 
 > [En_Doc](https://github.com/aoii103/DarkNet_ChineseTrading/blob/master/README_en.md)
+> [教程:如何实现暗网交易监控](https://mp.weixin.qq.com/s/OaPjAaNcEefQxaXQykheqg)
 
 ## 监控大屏(grafana快速实现)
 ![](media/grafana.png)
