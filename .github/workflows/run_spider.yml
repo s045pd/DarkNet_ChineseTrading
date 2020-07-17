@@ -22,7 +22,8 @@ jobs:
         python-version: 3.8
     - name: Install tor
       run: |
-        apt install tor -y
+        compgen -a
+        sudo apt install tor -y
         tor
         netstat -anot|grep Listen
   
