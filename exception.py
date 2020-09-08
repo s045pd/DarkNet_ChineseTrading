@@ -3,18 +3,21 @@ from dataclasses import dataclass
 
 @dataclass
 class BASE_EXCEPTION(Exception):
-    message: str = ""
+    message: str = "testspace"
     status: int = None
 
 
+@dataclass
 class NETWORK_ERROR(BASE_EXCEPTION):
     pass
 
 
+@dataclass
 class LOCAL_ERROR(BASE_EXCEPTION):
     pass
 
 
+@dataclass
 class BAN_USER(LOCAL_ERROR):
     pass
 

@@ -1,10 +1,10 @@
+import copy
 import json
 import time
 from base64 import b64encode
+from io import BytesIO
 from pprint import pprint
 from urllib.parse import urljoin
-from log import success, error
-import copy
 
 import requests
 import telepot
@@ -13,20 +13,20 @@ from celery.schedules import crontab
 from peewee import fn
 from retry import retry
 
-from conf import Config
-from model import DarkNet_DataSale, DarkNet_IMGS, DarkNet_Notice, DarkNet_User
 from common import read_exif_gps
-from io import BytesIO
+from conf import Config
+from log import error, success
+from model import events
 
-telepot.api.set_proxy(Config.telegram_proxy)
-bot = telepot.Bot(Config.telegram_token)
+telepot.api.set_proxy(Config.tg_proxy)
+bot = telepot.Bot(Config.tg_token)
 app = Celery("darknet", broker=f"redis://{Config.redis_host}:{Config.redis_port}//")
 
 
 @app.task()
 def telegram(msg, sid, rid):
     bot.sendMessage(rid, msg)
-    query = DarkNet_Notice.update({"telegram": True}).where(DarkNet_Notice.sid == sid)
+    query = events.update({"notice": True}).where(events.sid == sid)
     query.execute()
 
 
@@ -46,13 +46,13 @@ def telegram_with_pic(pics, details, sid, rid):
             except Exception as e:
                 error(e)
         bot.sendPhoto(
-            rid, target, details + (f"\nEXIF GPS: {gps_data}" if gps_data else "")
+            rid,
+            target.open("rb"),
+            details + (f"\nEXIF GPS: {gps_data}" if gps_data else ""),
         )
         if gps_data:
             bot.sendLocation(rid, *gps_data[::-1])
-        query = DarkNet_Notice.update({"telegram": True}).where(
-            DarkNet_Notice.sid == sid
-        )
+        query = events.update({"notice": True}).where(events.sid == sid)
         query.execute()
     except Exception as e:
         error(f"telegram_with_pic: {e}")
@@ -60,24 +60,4 @@ def telegram_with_pic(pics, details, sid, rid):
 
 @app.task()
 def logreport(msg):
-    bot.sendMessage(Config.ReportGroupID, msg)
-
-
-@app.task()
-def keep_alive():
-    pass
-
-
-@app.task()
-def auto_reg():
-    pass
-
-
-# app.conf.update(
-#     timezone='Asia/Shanghai',
-#     enable_utc=True,
-#     beat_schedule={
-#         'auto_reg_task':{
-#             'task'
-#         }
-#     })
+    bot.sendMessage(Config.tg_report_group_id, msg)

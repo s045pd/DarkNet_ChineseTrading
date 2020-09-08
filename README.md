@@ -26,18 +26,20 @@
 
 加入我们：[https://t.me/fordarknetspiderbot](https://t.me/fordarknetspiderbot)
 
-## 安装(Mac下)
+## 安装
 
-- ### python环境配置
+- ###
 
-	下载并安装 *`anaconda 3.5`*
+- #### python环境配置
+
+	下载并安装 *`python 3.8`*
 	
 	```
 	pip install -r ./requirements.txt
 	pip install -U 'requests[socks]'
 	```
 	
-- ### tor安装
+- #### tor安装
 
 	> 当前需更新tor至[0.4.0.0版本]，旧版将有几率无法取得数据
 	> 如果无法通过如下命令安装最新版，推荐至官网编译安装最新源码包
@@ -59,7 +61,7 @@
 	ControlPort 9151 				# 开启控制端口
 	```
 
-- ### OCR(mac)
+- #### OCR(mac)
 
 	> 识别率略低，可在parser.py的get_captcha处替换	
 
@@ -70,10 +72,24 @@
 	```
 	
 	[snum.traineddata](media/snum.traineddata)
-	
-- ### 存储环境
 
-	安装`Docker`后下载`Redis``Mysql`即可
+
+- #### 存储环境
+
+	安装`Docker`后下载`Redis Mysql`即可
+
+- ### Centos下环境安装
+
+```bash
+yum install epel-release -y
+yum install redis mariadb mariadb-server git tesseract tesseract-langpack-deu tor -y 
+wget -P /usr/share/tesseract/tessdata/ https://pyocean.com/data/tesseract/snum.traineddata 
+
+
+systemctl start mariadb   #启动mariadb
+systemctl enable mariadb  #设置开机自启动
+mysql_secure_installation 
+```
 
 - ### 运行
 	

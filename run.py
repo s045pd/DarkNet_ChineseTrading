@@ -1,524 +1,248 @@
+import platform
 import random
 import re
 import sys
 import time
 from base64 import b64encode
+from dataclasses import dataclass
 from io import BytesIO
 from parser import Parser
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 
 import click
-
-# import pudb;pu.db
 import moment
 import nude
-import requests
-from bs4 import BeautifulSoup as bs_4
+import requests_html
 from imgcat import imgcat
-from pyquery import PyQuery as jq
+from peewee import IntegrityError, fn
+from requests import RequestException
 from retry import retry
 
-from common import fake_datas, init_path, make_new_tor_id, random_key
+from common import init_path, make_new_tor_id, random_key
 from conf import Config
 from cursor import Cursor
-from log import debug, error, info, success, warning
-from task import logreport, telegram, telegram_with_pic
 from exception import *
+from log import *
+from task import logreport, telegram, telegram_with_pic
 
 
+@dataclass
 class DarkNet_ChineseTradingNetwork(object):
-    def __init__(self, domain, just_update):
-        self.domain = domain
-        self.sid = ""
-        self.just_update = just_update
-        self.need_re_register = False
-        self.notice_range = 0
-        self.rootpath = "datas"
-        self.screenpath = "screen_shot"
-        list(map(init_path, [self.rootpath, self.screenpath]))
-        self.init_domain()
+    is_login = False
+    domain = random.choice(Config.domains)
+    proxies = {"http": Config.tor_proxy, "https": Config.tor_proxy}
 
-    def init_domain(self):
-        last_domain = Cursor.get_last_domain()
-        self.domain = last_domain if last_domain else self.domain
-        self.make_links()
+    def __post__init__(self):
+        ...
 
     def new_session(self):
-        new_session = requests.Session()
-        new_session.headers = {
+        session = requests_html.HTMLSession()
+        session.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.5",
             "Accept-Encoding": "gzip, deflate",
-            # "Host": self.domain,
+            "Host": self.domain,
             "Connection": "keep-alive",
             "Upgrade-Insecure-Requests": "1",
             "Pragma": "no-cache",
             "Cache-Control": "no-cache",
         }
-        new_session.proxies = {"https": Config.tor_proxy, "http": Config.tor_proxy}
-        new_session.timeout = 30
-        new_session.verify = False
-        return new_session
+        session.timeout = 30
+        session.verify = False
+        self.session = session
 
-    def refresh_new_target(self, resp):
-        warning("refresh checking")
-        next_path = Parser.get_next_target(resp)
-        self.sid = Parser.get_sid(resp, self.sid)
-
-        if next_path:
-            parse_res = urlparse(next_path)
-            domain = parse_res.netloc
-            query = parse_res.query
-            if domain:
-                if self.domain != domain:
-                    self.domain = domain
-                    success(f"new domain: {self.domain}")
-                    self.update_cookie_domain()
-                    Cursor.create_new_domain(self.domain)
-
-            if query:
-                query = dict((item.split("=") for item in query.split("&")))
-
-            self.make_links()
-            next_url = urljoin(resp.url, next_path)
-            warning(f"refresh to: {next_url}")
-            return self.refresh_new_target(self.session.get(next_url))
+    def get(self, path: str, params: dict = None, **kwargs):
+        resp = self.session.get(
+            urljoin(self.index_url, path), params=params, proxies=self.proxies, **kwargs
+        )
+        resp.encoding = "utf8"
         return resp
 
-    def make_links(self):
-        self.main_url = f"http://{self.domain}/"
-        self.index_url = f"{self.main_url}/index.php"
+    def post(self, path, data: dict = None, json: dict = None, **kwargs):
+        resp = self.session.post(
+            urljoin(self.index_url, path),
+            data=data,
+            json=json,
+            proxies=self.proxies,
+            **kwargs,
+        )
+        resp.encoding = "utf8"
+        return resp
+
+    def load_main_page(self):
+        resp = self.get(self.index_url)
+        captcha_path = resp.html.find("img")[0].attrs["src"]
+        form_path = resp.html.find("form")[0].attrs["action"]
+        resp = self.post(
+            form_path,
+            data={
+                "sub_code": Parser.predict_captcha(self.get, captcha_path),
+                "lgsub": "进入下一步",
+            },
+        )
 
     def report_cookies(self):
         [success(f"{key}:{value}") for key, value in self.session.cookies.items()]
 
-    def to_main_page(self):
-        warning(f"fetch main page: {self.main_url}")
-        resp = self.session.get(self.main_url)
-        return resp
-
-    def clear_cookies(self):
-        self.session.cookies.clear()
-        info(f"already cleaned session cookies.")
-
-    def clean_log(self, resp, lens=100):
-        return (" ".join(bs_4(resp.text, "lxml").text.split()))[:lens] + "..."
-
-    def create_random_author(self):
-        self.usr = fake_datas()
-        self.pwd = random_key(random.randint(10, 16))
-
-        info(f"usr: {self.usr} pwd: {self.pwd}")
-
-    def get_pic_base64(self, link):
-        return (
-            link if "http" not in link else bytes.decode(b64encode(self.get_pic(link)))
-        )
-
-    def get_cookie_string(self):
-        cookie_name_space = [
-            "nix",
-            "random",
-            "token",
-            "PHPSESSID",
-            "phpbb3_nspa_c",
-            "phpbb3_nspa_a",
-            "phpbb3_nspa_u",
-            "phpbb3_nspa_k",
-            "phpbb3_nspa_track",
-            "phpbb3_nspa_sid",
-        ]
-        strs = "; ".join(
-            map(
-                lambda name: f"{name}={self.session.cookies.get(name,'',self.domain)}",
-                cookie_name_space,
-            )
-        )
-        debug(f"cookies string: {strs}")
-        return strs
-
-    def update_cookie_domain(self):
-        jar = requests.cookies.RequestsCookieJar()
-        for key, value in self.session.cookies.items():
-            jar.set(key, value, domain=self.domain)
-        self.session.cookies = jar
-        success(f"update all cookies to current domain: {self.session.cookies}")
+    def clean_lines(self, resp, lens=100):
+        return (" ".join(resp.html.text.split()))[:lens] + "..."
 
     def update_random_user(self):
-        user = Cursor.get_random_user(180)
-        if user:
-            self.usr = user.user
-            self.pwd = user.pwd
+        self.auth = tuple([])
+        if (user := Cursor.get_random_user()) :
+            self.auth = (user.usr, user.pwd)
+            info(f"随机用户: {self.auth=}")
             return True
 
-    @retry()
+    @retry((RequestException), delay=1)
     def get_pic(self, link):
-        warning(f"pic url: {link}")
-        resp = self.session.get(link, headers={"Cookie": self.get_cookie_string()})
-        # resp = self.session.get(link)
-        debug(f"pic resp types: {resp.headers.get('Content-Type','')}")
-        pic_data = resp.content
-        if Config.debug:
-            imgcat(pic_data)
-        return pic_data
+        if not link:
+            return ""
+        warning(link)
+        return self.get(link).content
 
-    def save_pics(self, urls, sid):
+    def save_pics(self, context, sid):
         image_box = []
-        for index, url in enumerate(urls):
+        for indexs, img in enumerate(context["img"]):
             try:
-                current_image = None
-                url = url if "http" in url else urljoin(f"http://{self.domain}", url)
-                info(f"---fetch pic[{index}]:{url}")
-                path = f"{self.screenpath}/{sid}_{index}.png"
-                with open(path, "wb") as file:
-                    current_image = self.get_pic(url)
-                    file.write(current_image)
-                    success(f"image saved: {path}")
+                path = Config.screen_path / f"{sid}_{indexs}.png"
+                with path.open("wb") as pic:
+                    pic.write(img)
+                    success(f"saved {path=}")
                 if Config.no_porn_img and nude.is_nude(path):
-                    warning("nude detected")
+                    warning(f"[{indexs}]nude detected")
                     continue
-                image_box.append(BytesIO(current_image))
+                image_box.append(path)
             except Exception as e:
                 error(e)
-        success(f"images: {image_box}")
-        return image_box
+        success(f"images: {len(image_box)}")
+        context["img"] = image_box
 
-    @retry(delay=2, tries=20)
-    def first_fetch(self):
-        try:
-            warning(f"domain: {self.domain}")
-            self.sid, self.login_payload, self.login_url, self.register_url = Parser.get_login_and_reg_payload(
-                self.refresh_new_target(self.to_main_page())
-            )  # / -> ucp.php
-            self.report_cookies()
-            if not self.update_random_user():  # or random.choice([1, 0]):
-                self.register()
-            return True
-        except (KeyboardInterrupt, PROXY_ERROR):
-            exit()
-
-    def make_reg_headers(self, resp):
-        return {
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Origin": self.main_url,
-            "Referer": resp.url,
-        }
-
-    @retry(delay=2, tries=10)
+    # @retry(delay=2, tries=10)
     def register(self):
-        try:
-            warning("register confirm")
-            resp = self.refresh_new_target(
-                self.session.get(
-                    self.register_url,
-                    headers={
-                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
-                        "Content-Type": "application/x-www-form-urlencoded",
-                        "Referer": self.register_url,
-                    },
-                )
-            )
-            token, creation_time = Parser.get_token_and_creation_time(resp)
-            warning("start register")
-            resp = self.session.post(
-                self.register_url,
-                data={
-                    "agreed": "===好的,我已明白,请跳转到下一页继续注册====",
-                    "change_lang": "",
-                    "creation_time": creation_time,
-                    "form_token": token,
-                },
-                headers=self.make_reg_headers(resp),
-            )
-            token, creation_time = Parser.get_token_and_creation_time(resp)
-            confirm_code, confirm_id = Parser.get_captcha(self.get_pic, resp)
-            self.create_random_author()
-            data = {
-                "username": self.usr,
-                "new_password": self.pwd,
-                "password_confirm": self.pwd,
-                "email": "xxxx@xxxx.xxx",
-                "lang": "zh_cmn_hans",
-                "tz_date": "UTC+08:00 - Antarctica/Casey - "
-                + moment.now().format("YYYY-MM-DD HH:mm"),
-                "tz": "Asia/Hong_Kong",
-                "agreed": "true",
-                "change_lang": "0",
-                "confirm_code": confirm_code,
-                "confirm_id": [confirm_id, confirm_id],
-                "creation_time": creation_time,
-                "form_token": token,
-                "submit": " 用户名与密码已填好, 点此提交 ",
-            }
-            resp = self.session.post(
-                self.register_url, data=data, headers=self.make_reg_headers(resp)
-            )
-            assert "感谢注册" in resp.text
-            success("register success")
-            Cursor.create_new_user({"user": self.usr, "pwd": self.pwd})
-        except KeyboardInterrupt:
-            exit()
-        except AssertionError as e:
-            error("register failed")
-            error(self.clean_log(resp))
-            raise e
-
-    @retry(delay=2, tries=10)
-    def login(self):
-        try:
-            """
-                ### 再次尝试
-                1.因为网络问题重试
-
-                ### 重新注册
-                2.因为账户被封重试
-                3.因为账户认证错误重试
-            """
-            warning(f"login -> [{self.usr}:{self.pwd}]")
-            self.login_payload.update({"password": self.pwd, "username": self.usr})
-            resp = self.session.post(
-                self.login_url,
-                data=self.login_payload,
-                headers={
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Referer": f"http://{self.domain}/ucp.php?mode=login",
-                },
-                allow_redirects=False,
-            )
-            debug(f"login[1] requests header: {resp.request.headers}")
-            debug(f"login[1] response header: {resp.headers}")
-            if resp.status_code == 302 and "Location" in resp.headers:
-                resp = self.refresh_new_target(
-                    self.session.get(
-                        resp.headers.get("Location"),
-                        headers={
-                            "Referer": f"http://{self.domain}/ucp.php?mode=login&sid={self.sid}",
-                            "Cookie": self.get_cookie_string(),
-                        },
-                    )
-                )
-            else:
-                Cursor.ban_user(self.usr)
-                self.update_random_user()
-                return
-            debug(f"login[2] requests header: {resp.request.headers}")
-            debug(f"login[2] response header: {resp.headers}")
-            if self.usr in resp.text and "暗网欢迎您" in resp.text:
-                success("Auth Success")
-                self.types = Parser.get_current_type(resp)
-            else:
-                error(f"Auth Faild: {self.clean_log(resp)}")
-                if re.findall("已被封禁|无效的|违规被处理", resp.text):
-                    Cursor.ban_user(self.usr)
-                    self.update_random_user()
-                    # if not self.register():
-                    #     return
-                    # else:
-                    #     raise ValueError
-        except KeyboardInterrupt:
-            exit()
-
-    @retry(delay=2, tries=10)
-    def get_type_datas(self, qeaid, name, page=1):
-        url = urljoin(
-            self.main_url, f"/pay/user_area.php?q_ea_id={qeaid}&pagey={page}#pagey"
-        )
-        warning(f"get_type_datas: {url}")
-        resp = self.session.get(
-            url,
-            headers={
-                "Referer": f"http://{self.domain}/pay/user_area.php?q_ea_id={qeaid}",
-                "Cookie": self.get_cookie_string(),
+        pwd = random_key(random.randint(10, 16))
+        resp = self.post(
+            "/entrance/registers.php",
+            data={
+                "regpass": pwd,
+                "regpasss": pwd,
+                "sub_code": Parser.predict_captcha(self.get),
+                "regsub": "提交注册",
             },
         )
-        info(resp.headers.get("Set-Cookie", ""))
-        resp.encoding = "utf8"
-        hasres = False
-        try:
-            self.check_if_need_relogin(resp)
-            for item, details_url in Parser.get_types(resp):
-                self.get_details(
-                    details_url,
-                    Parser.get_type_datas(item),
-                    name,
-                    page,
-                    Parser.get_index(item),
-                    resp.url,
-                )
-                hasres = True
-            if page == 1:
-                return Parser.get_max_page(resp, self.just_update)
-            if hasres:
-                return True
-        except KeyboardInterrupt:
-            exit()
-        except Exception as e:
-            error(f"get_type_datas: {e}")
-            error(self.clean_log(resp))
+        if not (user_id_list := resp.html.search(" 用户编号: {} ")):
+            error("注册失败")
+            return
 
-    def check_if_need_relogin(self, resp, passed=False, need_raise=True):
+        self.auth = (user_id_list[0], pwd)
+        success(f"注册成功: {self.auth}")
 
-        if passed or "缓存已经过期" in resp.text:
-            """
-                登录超时重新登录
-            """
-            debug("cache timeout!")
-            if self.first_fetch():
-                self.login()
+        Cursor.create_new_user(self.auth)
 
-        elif "您必须注册并登录才能浏览这个版面" in resp.text or "无效的用户名" in resp.text:
-            import pudb
-
-            pudb.set_trace()
-            """
-                账户遭到封锁重新注册
-            """
-            # if self.need_re_register:
-            #     self.register()
-            # else:
-            #     self.login()
-            pass
-        else:
-            return True
-
-        if need_raise:
-            raise ValueError
-
-    @retry(delay=2, tries=10)
-    def get_details(self, url, muti, name, page, index_str, referer_url):
-        resp = self.session.get(
-            url, headers={"Referer": referer_url, "Cookie": self.get_cookie_string()}
+    @retry((RequestException, ValueError), tries=2, delay=10)
+    def login(self):
+        if len(self.auth) != 2:
+            return
+        resp = self.post(
+            "/entrance/logins.php",
+            data={
+                "lgid": self.auth[0],
+                "lgpass": self.auth[1],
+                "sub_code": Parser.predict_captcha(self.get),
+                "lgsub": "进入系统",
+            },
         )
-        info(resp.headers.get("Set-Cookie", ""))
-        resp.encoding = "utf8"
-        if not self.check_if_need_relogin(resp):
-            return
+        if "注销" not in resp.text:
+            error(f"{self.auth=}登录失败")
+            raise ValueError("登录失败")
+        success(f"{self.auth=}登录成功")
+        self.is_login = True
 
-        bs_data = bs_4(resp.text, "lxml")
-        uid, sid = Parser.get_uid_and_sid(bs_data)
-
-        if not any((uid, sid)):
-            error("uid&sid lost")
-            return
-
-        details, person, notice, img = Cursor.get_model_details(uid, sid)
-        try:
-            person_datas, username = Parser.get_person_data(bs_data)
-            if not person:
-                person_datas.update(
-                    {
-                        "uid": uid,
-                        "user": username,
-                        "regtime": Parser.get_reg_date(bs_data, "1999-01-01"),
-                    }
-                )
-                person = Cursor.create_person(person_datas)
-
-            else:
-                Cursor.update_person(person_datas, uid)
-                person = person[0].uid
-
-            if not notice:
-                notice = Cursor.create_notice({"sid": sid})
-            else:
-                notice = notice[0].sid
-
-            detailImages = None
-            detailContent = Parser.get_detail_content(bs_data)
-            if not img:
-                urls = Parser.get_img_urls(bs_data)
-                img = Cursor.create_img(
-                    {"sid": sid, "img": urls, "detail": detailContent}
-                )
-                detailImages = self.save_pics(urls, sid)
-            else:
-                img = img[0].sid
-            current_year = moment.now().year
-            real_up_time = Parser.get_up_time(bs_data, current_year)
-            details_datas = Parser.get_details(
-                bs_data, current_year, real_up_time, muti
-            )
-            if not details:
-                details_datas.update(
-                    {
-                        "sid": sid,
-                        "user": person,
-                        "area": muti["area"],
-                        "title": muti["title"],
-                        "detailurl": url,
-                        "img": img,
-                        "notice": notice,
-                    }
-                )
-                details = Cursor.create_details(details_datas)
-                self.make_msg(details, detailContent, detailImages, sid, username)
-            else:
-                Cursor.update_details(details_datas, sid)
-
-            short_msg = f'[{name}:{page}:{index_str}]-{real_up_time}- {muti["title"]}'
-            success(short_msg) if not details else warning(short_msg)
-
-        except KeyboardInterrupt:
-            exit()
-        except Exception as e:
-            error(f"[run-->__get_details]: {e}")
-
-    def make_msg(self, details, content, imgs, sid, username):
-        warning(f"send msg {sid} img: {len(imgs) if imgs else 0}")
-        msg = f"{details.uptime}\n🔥{details.title}\n\nAuthor: {username}\nPrice: ${details.priceUSDT}\nSource: {details.detailurl}\n\n\n>>> {content}\n"
+    def make_msg(self, obj, context, sid, author):
+        imgs = context["img"]
+        warning(f"send msg [{sid}] img: [{len(imgs) if imgs else 0}]")
+        msg = f"{obj.uptime}\n🔥{obj.title}\n\nAuthor: {author}\nPrice: ${obj.priceUSDT}\nSource: {obj.link}\n\n\n>>> {obj.text}\n"
         msg = msg if len(msg) < 1000 else msg[:997] + "..."
         if (
-            moment.date(details.uptime)
+            moment.date(obj.uptime)
             > moment.now()
             .replace(hours=0, minutes=0, seconds=0)
-            .add(days=self.notice_range)
-        ) or Config.sendForTest:
+            .add(days=abs(Config.notice_range_days) * -1)
+        ) or Config.send_for_test:
             if not imgs:
-                telegram(msg, sid, Config.darknetchannelID)
+                telegram(msg, sid, Config.tg_channel_id_darknet)
             else:
-                telegram_with_pic(imgs, msg, sid, Config.darknetchannelID)
+                telegram_with_pic(imgs, msg, sid, Config.tg_channel_id_darknet)
+
+    @retry((RequestException), delay=1)
+    def get_all_types(self):
+        if not self.is_login:
+            return
+        for self.current_types in Config.filter_area:
+            for page in range(2, self.get_singel_type()):
+                self.get_singel_type(page)
+
+    @retry((RequestException), delay=1)
+    def get_singel_type(self, page=1):
+        if not self.is_login:
+            return
+        path = self.current_types[0] + f"&pagea={page}#pagea"
+        resp = self.get(path)
+        for href, datas in Parser.parse_summary(resp):
+            success(f'[{page}]: {datas["title"]}')
+            self.get_singel_type_details(href, datas)
+        if page == 1:
+            return Parser.parse_max_page(resp, Config.just_update)
+
+    @retry((RequestException), delay=1)
+    def get_singel_type_details(self, path, datas):
+        if not self.is_login:
+            return
+
+        sid, uid, resp = datas["sid"], datas["user"], self.get(path)
+        new_data, imgs = Parser.parse_details(resp, self.get_pic, self.current_types[1])
+        datas.update(new_data)
+        info(f"{datas=}")
+        obj = Cursor.get_model_details(sid)
+        try:
+            if not obj:
+                obj = Cursor.create_details(datas)
+                self.save_pics(imgs, sid)
+                self.make_msg(obj, imgs, sid, uid)
+            else:
+                Cursor.update_details(datas, sid)
+
+            short_msg = (
+                f'[{self.current_types[1]}]-{datas["lasttime"]}- {datas["title"]}'
+            )
+            success(short_msg) if not obj else warning(short_msg)
+
+        except KeyboardInterrupt:
+            exit()
+        except Exception as e:
+            error(e)
+            raise e
 
     def run(self):
-        while True:
-            try:
-                self.session = self.new_session()
-                make_new_tor_id()
-                self.check_if_need_relogin(None, True, False)
-                for qeaid, name in self.types.items():
-                    max_page = self.get_type_datas(qeaid, name)
-                    for page in range(2, max_page):
-                        if not self.get_type_datas(qeaid, name, page):
-                            break
-            except KeyboardInterrupt:
-                exit()
-            finally:
-                time.sleep(1)
-
-
-@click.command()
-@click.option("--debug", is_flag=True, help="Print debug log")
-@click.option(
-    "--domain",
-    default="deepmix4izfgaal2mkfpn3cbjxxcs6wyp3lcgp6ksjhtt75vn2gangqd.onion",
-    help="Target domain.",
-)
-@click.option(
-    "--update", is_flag=True, help="Whether it has only been updated to crawler"
-)
-def main(debug, domain, update):
-    Config.debug = debug
-    DarkNet_ChineseTradingNetwork(domain, update).run()
+        info(f"{self.domain=}")
+        self.index_url = f"http://{self.domain}"
+        make_new_tor_id()
+        self.new_session()
+        if not self.update_random_user():
+            self.register()
+        self.login()
+        self.get_all_types()
 
 
 if __name__ == "__main__":
     while True:
         try:
-            main()
+            DarkNet_ChineseTradingNetwork().run()
         except KeyboardInterrupt:
             exit()
         except Exception as e:
-            error(f"sleeping")
+            error(f"sleeping: {e}")
             logreport.delay(str(e))
             time.sleep(1)
+            # raise e
