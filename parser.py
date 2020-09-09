@@ -6,7 +6,6 @@ from imgcat import imgcat
 from PIL import Image
 
 from common import convert_num, error_log
-from conf import Config
 from log import *
 
 
