@@ -1,15 +1,17 @@
+import pathlib
+
+current_path = pathlib.Path("./")
+
+
 class config_root:
     debug = True
-    domain = "xxxxxxxx3a3kuuhhw5w7stk25fzhttrlpiomij5bogkg7yyqsng5tqyd.onion"
+    domains = ("xxxxxxxx3a3kuuhhw5w7stk25fzhttrlpiomij5bogkg7yyqsng5tqyd.onion",)
 
     mysql_host = "127.0.0.1"
     mysql_port = 3306
     mysql_usr = "root"
     mysql_pass = ""
     mysql_db = "db"
-
-    redis_host = "127.0.0.1"
-    redis_port = 6379
 
     tor_proxy = "socks5h://127.0.0.1:9150"
 
@@ -33,7 +35,6 @@ class config_root:
         ("/ea.php?ea=10009", "私人专拍"),
     )
 
-
     send_for_test = False
     just_update = True
 
@@ -43,7 +44,6 @@ class config_root:
     limit_log = True
 
     notice_range_days = 2
-
 
 
 Config = config_root

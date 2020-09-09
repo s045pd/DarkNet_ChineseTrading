@@ -1,11 +1,10 @@
 import random
 
 import moment
-import peewee
 from peewee import fn
 
 from common import error_log
-from log import debug, error, info, warning
+from log import warning
 from model import events, workers
 
 

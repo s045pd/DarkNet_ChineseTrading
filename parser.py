@@ -1,16 +1,12 @@
 import platform
-import re
 from io import BytesIO
-from urllib.parse import urljoin, urlparse
 
-import moment
 import pytesseract
 from imgcat import imgcat
 from PIL import Image
 
 from common import convert_num, error_log
 from conf import Config
-from exception import *
 from log import *
 
 
@@ -62,23 +58,28 @@ class Parser:
     @staticmethod
     @error_log()
     def parse_details(resp, img_func, types):
-        T  = resp.html.pq('.v_table_1')
+        T = resp.html.pq(".v_table_1")
         try:
             return (
                 {
-                    "priceUSDT": convert_num(T("tr:nth-child(3) >  td:nth-child(4) > span").text(), float),
+                    "priceUSDT": convert_num(
+                        T("tr:nth-child(3) >  td:nth-child(4) > span").text(), float
+                    ),
                     "status": resp.html.search("<td>交易状态:</td><td>{}</td>")[0],
                     "sold": resp.html.search("<td>本单成交:</td><td>{}</td>")[0],
                     "area": types,
                     "link": resp.url,
-                    "lasttime": T(".v_table_1 > tr:nth-child(5) > td:nth-child(6)").text(),
+                    "lasttime": T(
+                        ".v_table_1 > tr:nth-child(5) > td:nth-child(6)"
+                    ).text(),
                     "text": resp.html.pq(".div_masterbox > t").text(),
                 },
                 {
                     "img": [
-                        img_func(img.get("src")) for img in resp.html.pq(".attachbox > img")
+                        img_func(img.get("src"))
+                        for img in resp.html.pq(".attachbox > img")
                     ]
-                }
+                },
             )
         except Exception:
             # breakpoint()

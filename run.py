@@ -1,27 +1,18 @@
-import platform
 import random
-import re
-import sys
 import time
-from base64 import b64encode
 from dataclasses import dataclass
-from io import BytesIO
 from parser import Parser
 from urllib.parse import urljoin
 
-import click
 import moment
 import nude
 import requests_html
-from imgcat import imgcat
-from peewee import IntegrityError, fn
 from requests import RequestException
 from retry import retry
 
-from common import init_path, make_new_tor_id, random_key
+from common import make_new_tor_id, random_key
 from conf import Config
 from cursor import Cursor
-from exception import *
 from log import *
 from task import logreport, telegram, telegram_with_pic
 
