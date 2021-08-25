@@ -27,7 +27,12 @@
 
 ## 使用
 
-准备好 `docker` 或 `podman` 及 `docker-compose`
+注意事项：
+
+- 需要全局F墙环境，测试可在 [https://ide.goorm.io/](https://ide.goorm.io/) 部署
+- 未改TG判断，需再 [.env.default](.env.default)下配置好TG
+- 准备好 `docker` 或 `podman` 及 `docker-compose`
+- 首次启动似乎会报无法解析到 `db`，再起一次就好了
 
 ```bash
 git clone https://github.com/s045pd/DarkNet_ChineseTrading.git
