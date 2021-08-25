@@ -38,3 +38,4 @@ docker-compose build --pull && docker-compose --env-file .env.default up
 ## TODO
 
 - 宿主机Socks5代理
+- Grafana界面
