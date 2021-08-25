@@ -22,6 +22,7 @@
 - Event reminder（telegram）[Graphic with Photo]
 - Nude Image Filter
 - EXIF GPS Detect
+- New Capcha Solution [ddddocr](https://github.com/sml2h3/ddddocr)
 
 join us：[https://t.me/fordarknetspiderbot](https://t.me/fordarknetspiderbot)
 
