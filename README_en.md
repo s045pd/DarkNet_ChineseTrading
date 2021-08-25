@@ -28,7 +28,10 @@ join us：[https://t.me/fordarknetspiderbot](https://t.me/fordarknetspiderbot)
 
 ## Use
 
-prepare `docker` or `podman` and `docker-compose`
+- you can test it on [https://ide.goorm.io/](https://ide.goorm.io/)
+- telegram configure is necessary at [.env.default](.env.default)
+- prepare `docker` or `podman` and `docker-compose`
+
 
 ```bash
 git clone https://github.com/s045pd/DarkNet_ChineseTrading.git
