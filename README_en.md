@@ -25,71 +25,17 @@
 
 join us：[https://t.me/fordarknetspiderbot](https://t.me/fordarknetspiderbot)
 
-## Install(Mac)
+## Use
 
-- ### python env config
+prepare `docker` or `podman` and `docker-compose`
 
-  download and install the integrated environment , **anaconda 3.5** ,and then install the required pkg
+```bash
+git clone https://github.com/s045pd/DarkNet_ChineseTrading.git
+cd DarkNet_ChineseTrading
+docker-compose build --pull && docker-compose --env-file .env.default up
+```
 
-  ```
-  pip install -r ./requirements.txt
-  pip install -U 'requests[socks]'
-  ```
+## TODO
 
-- ### install tor
-
-  ```
-  brew install tor
-
-  cd /usr/local/etc/tor
-  cp torrc.sample ./torrc
-  vi torrc
-  ```
-
-  Add the following to configure **`torrc`** and run the command **`restart_tor.sh`** to restart the tor
-
-  ```
-  SOCKSPort 9050 					# socks5 proxy address
-  Socks5Proxy 127.0.0.1:1086 		# shadowsocks proxy(if you are in China)
-  RunAsDaemon 1 					# running in the background
-  ControlPort 9051 				# open control port
-
-  ```
-
-- ### Storage
-
-  install **`Docker`** with **`Redis`** **`Mysql`**
-
-- ### Run
-
-  configure the connection in `config_dev.py`and`TelegramRobotToken`
-
-  ```
-  mv config_dev.py config.py
-  bash restart_task.sh
-  python run.py
-  ```
-
-- ### OCR(mac)
-
-  ![](media/captcha.png)
-
-  ```
-  brew install tesseract
-  ```
-
-  [snum.traineddata](media/snum.traineddata)
-
-- ### Running logic
-
-  ![](media/DarkNet.png)
-
-- ### Result screenshot
-
-  - #### telegram
-
-    ![](media/newtg.png)
-
-  - #### `run.py`
-
-    ![](media/run.png)
+- Host Socks5 Proxy
+- Grafana Page
