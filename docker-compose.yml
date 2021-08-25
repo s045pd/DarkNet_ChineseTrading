@@ -1,0 +1,33 @@
+#### bridege network
+version: "3.9"
+services:
+  db:
+    image: "mariadb:latest"
+    environment:
+      MYSQL_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./darknet_volumes/db/:/var/lib/mysql
+    networks:
+      - app-darknet
+  crawler:
+    build: .
+    depends_on:
+      - db
+    networks:
+      - app-darknet
+    links:
+      - db
+    environment:
+      MYSQL_HOST: db
+      MYSQL_PASS: root
+      TG_TOKEN:
+      TG_CID_DARKNET:
+      TG_REPORT_GID:
+      TOR_FORWORD_SOCKS5_PROXY:
+    volumes:
+      - ./darknet_volumes/screen_shot:/opt/darknet/screen_shot
+
+networks:
+  app-darknet:
+    driver: bridge

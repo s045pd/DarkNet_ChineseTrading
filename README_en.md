@@ -1,14 +1,15 @@
 ![mosaic.jpg](media/mosaic.jpg)
+
 ## DarkNet_ChineseTrading - A crawler for real-time monitoring of the dark network website.
+
 ![](https://img.shields.io/badge/language-python3-orange.svg)
 ![](https://img.shields.io/badge/platform-mac|lunix|window-orange.svg)
 
 > [Tutorial: How to Implement Dark Net Transaction Monitoring] (https://mp.weixin.qq.com/s/OaPjAaNcEefQxaXQykheqg)
 
 ## Monitor screen(by grafana)
+
 ![](media/grafana.png)
-
-
 
 ## Features
 
@@ -28,74 +29,67 @@ join us：[https://t.me/fordarknetspiderbot](https://t.me/fordarknetspiderbot)
 
 - ### python env config
 
-	download and install the integrated environment , **anaconda 3.5** ,and then install the required pkg
+  download and install the integrated environment , **anaconda 3.5** ,and then install the required pkg
 
-	```
-	pip install -r ./requirements.txt
-	pip install -U 'requests[socks]'
-	```
-	
-- ### install tor 
-	
-	```
-	brew install tor
-	
-	cd /usr/local/etc/tor
-	cp torrc.sample ./torrc
-	vi torrc
-	```
-	Add the following to configure **```torrc```** and run the command **```restart_tor.sh```** to restart the tor
-	
-	```
-	SOCKSPort 9150 					# socks5 proxy address
-	Socks5Proxy 127.0.0.1:1086 		# shadowsocks proxy(if you are in China)
-	RunAsDaemon 1 					# running in the background
-	ControlPort 9151 				# open control port
-	
-	```
-	
+  ```
+  pip install -r ./requirements.txt
+  pip install -U 'requests[socks]'
+  ```
+
+- ### install tor
+
+  ```
+  brew install tor
+
+  cd /usr/local/etc/tor
+  cp torrc.sample ./torrc
+  vi torrc
+  ```
+
+  Add the following to configure **`torrc`** and run the command **`restart_tor.sh`** to restart the tor
+
+  ```
+  SOCKSPort 9050 					# socks5 proxy address
+  Socks5Proxy 127.0.0.1:1086 		# shadowsocks proxy(if you are in China)
+  RunAsDaemon 1 					# running in the background
+  ControlPort 9051 				# open control port
+
+  ```
+
 - ### Storage
 
-	install **```Docker```** with **```Redis```** **```Mysql```**
+  install **`Docker`** with **`Redis`** **`Mysql`**
 
 - ### Run
-	configure the connection in ```config_dev.py```and```TelegramRobotToken```
 
-	```
-	mv config_dev.py config.py
-	bash restart_task.sh
-	python run.py
-	```
+  configure the connection in `config_dev.py`and`TelegramRobotToken`
+
+  ```
+  mv config_dev.py config.py
+  bash restart_task.sh
+  python run.py
+  ```
 
 - ### OCR(mac)
 
-	![](media/captcha.png)
+  ![](media/captcha.png)
 
-	```
-	brew install tesseract
-	```
+  ```
+  brew install tesseract
+  ```
 
-	[snum.traineddata](media/snum.traineddata)
-	
+  [snum.traineddata](media/snum.traineddata)
+
 - ### Running logic
-	
-	![](media/DarkNet.png)
-	
+
+  ![](media/DarkNet.png)
+
 - ### Result screenshot
 
-	- #### telegram
-		
-		![](media/newtg.png)
-		
-	- #### ```run.py```
-	
-		![](media/run.png)
-	
-	
-	
-	
-	
-	
+  - #### telegram
 
+    ![](media/newtg.png)
 
+  - #### `run.py`
 
+    ![](media/run.png)

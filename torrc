@@ -1,0 +1,4 @@
+SOCKSPort 9050 					# socks5 proxy address
+Socks5Proxy 127.0.0.1:1086 		# shadowsocks proxy(if you are in China)
+RunAsDaemon 1 					# running in the background
+ControlPort 9051 				# open control port

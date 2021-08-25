@@ -1,5 +1,6 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
+__pycache__
 *.py[cod]
 *$py.class
 celery.info
@@ -99,10 +100,10 @@ celerybeat-schedule
 # Environments
 .env
 .venv
-env/
-venv/
+env
+venv
 ENV/
-screen_shot/
+screen_shot
 datas/
 env.bak/
 venv.bak/
@@ -131,5 +132,15 @@ conf.py
 
 # Log
 ghostdriver.log
+
+Docker-Build.sh
+.gitignore
+README*
+LICENSE
+conf.py
+
+captcha_break/
 data_store/
-darknet_volumes
+screen_shot/
+venv/
+media/
