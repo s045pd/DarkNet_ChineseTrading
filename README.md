@@ -9,8 +9,6 @@
 ## 监控大屏(grafana快速实现)
 ![](media/grafana.png)
 
-
-
 ## 功能
 
 - Tor节点切换
@@ -23,120 +21,20 @@
 - 分类爬取
 - 裸体图片过滤(保存但不发送)
 - 残留EXIF-GPS信息提取
+- 新增 [ddddocr](https://github.com/sml2h3/ddddocr) 验证码识别
 
 加入我们：[https://t.me/fordarknetspiderbot](https://t.me/fordarknetspiderbot)
 
-## 安装
+## 使用
 
-- ###
-
-- #### python环境配置
-
-	下载并安装 *`python 3.8`*
-	
-	```
-	pip install -r ./requirements.txt
-	pip install -U 'requests[socks]'
-	```
-	
-- #### tor安装
-
-	> 当前需更新tor至[0.4.0.0版本]，旧版将有几率无法取得数据
-	> 如果无法通过如下命令安装最新版，推荐至官网编译安装最新源码包
-	
-	```
-	brew install tor
-		
-	cd /usr/local/etc/tor
-	cp torrc.sample ./torrc
-	vi torrc
-	```
-
-	将如下配置添加到 `torrc` 后，运行 `restart_tor.sh` 开启tor
-	
-	```
-	SOCKSPort 9150 					# socks5代理地址
-	Socks5Proxy 127.0.0.1:1086 		# 科学上网代理地址(如已翻墙可不填)
-	RunAsDaemon 1 					# 开启后台运行
-	ControlPort 9151 				# 开启控制端口
-	```
-
-- #### OCR(mac)
-
-	> 识别率略低，可在parser.py的get_captcha处替换	
-
-	![](media/captcha.png)
-
-	```
-	brew install tesseract
-	```
-	
-	[snum.traineddata](media/snum.traineddata)
-
-
-- #### 存储环境
-
-	安装`Docker`后下载`Redis Mysql`即可
-
-- ### Centos下环境安装
+准备好 `docker` 或 `podman` 及 `docker-compose`
 
 ```bash
-yum install epel-release -y
-yum install redis mariadb mariadb-server git tesseract tesseract-langpack-deu tor -y 
-wget -P /usr/share/tesseract/tessdata/ https://pyocean.com/data/tesseract/snum.traineddata 
-
-
-systemctl start mariadb   #启动mariadb
-systemctl enable mariadb  #设置开机自启动
-mysql_secure_installation 
+git clone https://github.com/s045pd/DarkNet_ChineseTrading.git
+cd DarkNet_ChineseTrading
+docker-compose build --pull && docker-compose --env-file .env.default up
 ```
 
-- ### 运行
-	
-	配置`config_dev.py`中的连接设定与`TelegramRobotToken`
+## TODO
 
-	```
-	mv config_dev.py conf.py 
-	bash restart_tor.sh
-	bash restart_task.sh
-	python run.py
-	
-	```
-	
-- ### 运行逻辑
-	
-	![](media/DarkNet.png)
-	
-- ### 运行结果截图
-
-	- #### telegram
-		
-		![](media/newtg.png)
-		
-	- #### `run.py`
-	
-		![](media/run.png)
-	
-
-- ### 额外命令
-
-	```
-	python3 run.py --help
-
-	Usage: run.py [OPTIONS]
-
-	Options:
-	  --debug        Print debug log
-	  --domain TEXT  Target domain.
-	  --save_error   Whether to save the error log
-	  --update       Whether it has only been updated to crawl
-	  --help         Show this message and exit.
-
-	```	
-	
-
-	
-	
-
-
-
+- 宿主机Socks5代理
