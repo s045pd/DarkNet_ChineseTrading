@@ -39,6 +39,8 @@ cd DarkNet_ChineseTrading
 docker-compose build --pull && docker-compose --env-file .env.default up
 ```
 
+<img width="1427" alt="Pasted Graphic 1" src="https://user-images.githubusercontent.com/22721729/130713991-17897b03-ddea-4c53-aff7-976fc13fc90e.png">
+
 ## TODO
 
 - Host Socks5 Proxy
