@@ -1,7 +1,7 @@
 import unittest
 import random
 
-from .common import *
+from darknet.common import *
 from dataclasses import dataclass
 
 
@@ -14,13 +14,19 @@ class CommonTest(unittest.TestCase):
         self.str_random_num = str(self.random_num)
 
     def test_convert_num_float(self):
-        self.assertEqual(convert_num(self.str_random_num, float), self.random_num)
+        self.assertEqual(
+            convert_num(self.str_random_num, float), self.random_num
+        )
 
     def test_convert_num_str(self):
-        self.assertEqual(convert_num(self.str_random_num, str), self.str_random_num)
+        self.assertEqual(
+            convert_num(self.str_random_num, str), self.str_random_num
+        )
 
     def test_convert_num_int(self):
-        self.assertEqual(convert_num(self.str_random_num, int), int(self.random_num))
+        self.assertEqual(
+            convert_num(self.str_random_num, int), int(self.random_num)
+        )
 
     def test_convert_num_wrong_data(self):
         self.assertEqual(convert_num("dasdsada"), "0")

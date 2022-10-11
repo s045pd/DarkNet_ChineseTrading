@@ -6,8 +6,8 @@ from imgcat import imgcat
 from PIL import Image
 
 import ddddocr
-from .common import convert_num, error_log
-from .log import *
+from darknet.common import convert_num, error_log
+from darknet.log import *
 
 ocr = ddddocr.DdddOcr()
 
@@ -24,7 +24,9 @@ class Parser:
             imgcat(raw)
         else:
             Image.open(BytesIO(raw))
-        code = "".join(re.findall("[0-9a-zA-Z]", ocr.classification(BytesIO(raw).read()))).upper()
+        code = "".join(
+            re.findall("[0-9a-zA-Z]", ocr.classification(BytesIO(raw).read()))
+        ).upper()
         warning(f"predict: {code}")
         return code
 
@@ -43,7 +45,9 @@ class Parser:
                             "uptime": tr.pq("td:nth-child(2)").text(),
                             "user": tr.pq("td:nth-child(3)").text(),
                             "title": tr.pq("td:nth-child(4)").text(),
-                            "priceBTC": convert_num(tr.pq("td:nth-child(5)").text(), float),
+                            "priceBTC": convert_num(
+                                tr.pq("td:nth-child(5)").text(), float
+                            ),
                         },
                     )
                 )
@@ -59,15 +63,25 @@ class Parser:
         try:
             return (
                 {
-                    "priceUSDT": convert_num(T("tr:nth-child(3) >  td:nth-child(4) > span").text(), float),
+                    "priceUSDT": convert_num(
+                        T("tr:nth-child(3) >  td:nth-child(4) > span").text(),
+                        float,
+                    ),
                     "status": resp.html.search("<td>交易状态:</td><td>{}</td>")[0],
                     "sold": resp.html.search("<td>本单成交:</td><td>{}</td>")[0],
                     "area": types,
                     "link": resp.url,
-                    "lasttime": T(".v_table_1 > tr:nth-child(5) > td:nth-child(6)").text(),
+                    "lasttime": T(
+                        ".v_table_1 > tr:nth-child(5) > td:nth-child(6)"
+                    ).text(),
                     "text": resp.html.pq(".div_masterbox > t").text(),
                 },
-                {"img": [img_func(img.get("src")) for img in resp.html.pq(".attachbox > img")]},
+                {
+                    "img": [
+                        img_func(img.get("src"))
+                        for img in resp.html.pq(".attachbox > img")
+                    ]
+                },
             )
         except Exception:
             # breakpoint()
@@ -78,7 +92,11 @@ class Parser:
     def parse_max_page(resp, just_update=True):
         page = 1
         try:
-            page = convert_num(resp.html.pq(".button_page")[-1].text.strip(), int) if not just_update else 1
+            page = (
+                convert_num(resp.html.pq(".button_page")[-1].text.strip(), int)
+                if not just_update
+                else 1
+            )
         except Exception as e:
             pass
         finally:

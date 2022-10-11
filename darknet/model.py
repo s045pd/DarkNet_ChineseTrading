@@ -4,7 +4,7 @@ import pymysql
 from peewee import *
 from peewee import __exception_wrapper__
 
-from .default import Config
+from darknet.default import Config
 
 Links = {
     "host": Config.mysql_host,
@@ -16,7 +16,9 @@ Links = {
 try:
     con = pymysql.connect(**Links)
     with con.cursor() as cursor:
-        cursor.execute(f"create database {Config.mysql_db} character set UTF8mb4 collate utf8mb4_bin")
+        cursor.execute(
+            f"create database {Config.mysql_db} character set UTF8mb4 collate utf8mb4_bin"
+        )
     con.close()
 except pymysql.err.ProgrammingError as e:
     if "1007" in str(e):
@@ -28,7 +30,9 @@ except Exception as e:
 class RetryOperationalError(object):
     def execute_sql(self, sql, params=None, commit=True):
         try:
-            cursor = super(RetryOperationalError, self).execute_sql(sql, params, commit)
+            cursor = super(RetryOperationalError, self).execute_sql(
+                sql, params, commit
+            )
         except OperationalError:
             if not self.is_closed():
                 self.close()
@@ -73,7 +77,9 @@ class events(Model):
     text = TextField(default="", verbose_name="商品描述")
     # img = TextField(default="", verbose_name="图片Base64组合")
 
-    intime = DateTimeField(default=datetime.datetime.now, verbose_name="数据插入时间")
+    intime = DateTimeField(
+        default=datetime.datetime.now, verbose_name="数据插入时间"
+    )
     notice = BooleanField(default=False, verbose_name="任意提醒标识")
 
     class Meta:

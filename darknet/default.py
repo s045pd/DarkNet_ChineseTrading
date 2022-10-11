@@ -16,7 +16,12 @@ class Config:
     """
 
     debug = __("DEBUG", True)
-    domains = (_("DOMAIN", "xxxxxxxx3a3kuuhhw5w7stk25fzhttrlpiomij5bogkg7yyqsng5tqyd.onion"),)
+    domains = (
+        _(
+            "DOMAIN",
+            "xxxxxxxx3a3kuuhhw5w7stk25fzhttrlpiomij5bogkg7yyqsng5tqyd.onion",
+        ),
+    )
 
     mysql_host = _("MYSQL_HOST", "127.0.0.1")
     mysql_port = int(_("MYSQL_PORT", "3306"))
@@ -48,7 +53,8 @@ class Config:
                 ("/ea.php?ea=10005", "基础知识"),
                 ("/ea.php?ea=10009", "私人专拍"),
             )
-            if not _("FILTER_AREA", "") or item[0].split("=")[1] in _("FILTER_AREA", "")
+            if not _("FILTER_AREA", "")
+            or item[0].split("=")[1] in _("FILTER_AREA", "")
         ]
     )
 

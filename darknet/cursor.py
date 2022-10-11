@@ -3,9 +3,9 @@ import random
 import moment
 from peewee import fn
 
-from .common import error_log
-from .log import warning
-from .model import events, workers
+from darknet.common import error_log
+from darknet.log import warning
+from darknet.model import events, workers
 
 
 class Cursor:

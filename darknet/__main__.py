@@ -1,7 +1,7 @@
 import random
 import time
 from dataclasses import dataclass, field
-from .parser import Parser
+from darknet.parser import Parser
 from urllib.parse import urljoin
 
 import moment
@@ -10,11 +10,11 @@ import requests_html
 from requests import RequestException
 from retry import retry
 
-from .common import make_new_tor_id, random_key
-from .default import Config
-from .cursor import Cursor
-from .log import *
-from .task import logreport, telegram, telegram_with_pic
+from darknet.common import make_new_tor_id, random_key
+from darknet.default import Config
+from darknet.cursor import Cursor
+from darknet.log import *
+from darknet.task import logreport, telegram, telegram_with_pic
 
 
 if not Config.screen_path.exists():

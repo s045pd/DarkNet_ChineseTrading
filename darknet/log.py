@@ -2,14 +2,17 @@ import logging
 
 from termcolor import colored
 
-from .default import Config
+from darknet.default import Config
 
 logging.basicConfig(format="[%(asctime)s]%(message)s", level=logging.INFO)
 Loger = logging.getLogger("ChineseTradingNetwork")
 
 
 limit = (
-    lambda _: (str(_)[: Config.max_log_len] + ("..." if len(str(_)) > Config.max_log_len else ""))
+    lambda _: (
+        str(_)[: Config.max_log_len]
+        + ("..." if len(str(_)) > Config.max_log_len else "")
+    )
     if Config.limit_log
     else _
 )
