@@ -1,51 +1,75 @@
 import datetime
 
-import pymysql
-from peewee import *
-from peewee import __exception_wrapper__
+
+from peewee import (
+    CharField,
+    DateTimeField,
+    BooleanField,
+    TextField,
+    Model,
+    SqliteDatabase,
+    MySQLDatabase,
+    OperationalError,
+    __exception_wrapper__,
+)
+
+from settings import (
+    MYSQL_DATABASE,
+    MYSQL_HOST,
+    MYSQL_PASSWORD,
+    MYSQL_PORT_NUMBER,
+    MYSQL_USER,
+    USE_MYSQL,
+)
 
 from darknet.default import Config
 
-Links = {
-    "host": Config.mysql_host,
-    "port": Config.mysql_port,
-    "user": Config.mysql_usr,
-    "password": Config.mysql_pass,
-}
 
-try:
-    con = pymysql.connect(**Links)
-    with con.cursor() as cursor:
-        cursor.execute(
-            f"create database {Config.mysql_db} character set UTF8mb4 collate utf8mb4_bin"
-        )
-    con.close()
-except pymysql.err.ProgrammingError as e:
-    if "1007" in str(e):
-        pass
-except Exception as e:
-    raise e
+if USE_MYSQL:
+    import pymysql
 
+    links = {
+        "host": MYSQL_HOST,
+        "port": MYSQL_PORT_NUMBER,
+        "user": MYSQL_USER,
+        "password": MYSQL_PASSWORD,
+    }
 
-class RetryOperationalError(object):
-    def execute_sql(self, sql, params=None, commit=True):
-        try:
-            cursor = super(RetryOperationalError, self).execute_sql(
-                sql, params, commit
+    try:
+        con = pymysql.connect(**links)
+        with con.cursor() as cursor:
+            cursor.execute(
+                f"create database {MYSQL_DATABASE} character set UTF8mb4 collate utf8mb4_bin"
             )
-        except OperationalError:
-            if not self.is_closed():
-                self.close()
-            with __exception_wrapper__:
-                cursor = self.cursor()
-                cursor.execute(sql, params or ())
-                if commit and not self.in_transaction():
-                    self.commit()
-        return cursor
+        con.close()
+    except pymysql.err.ProgrammingError as e:
+        if "1007" in str(e):
+            pass
+    except Exception as e:
+        raise e
 
+    class RetryOperationalError(object):
+        def execute_sql(self, sql, params=None, commit=True):
+            try:
+                cursor = super(RetryOperationalError, self).execute_sql(
+                    sql, params, commit
+                )
+            except OperationalError:
+                if not self.is_closed():
+                    self.close()
+                with __exception_wrapper__:
+                    cursor = self.cursor()
+                    cursor.execute(sql, params or ())
+                    if commit and not self.in_transaction():
+                        self.commit()
+            return cursor
 
-class RetryMySQLDatabase(RetryOperationalError, MySQLDatabase):
-    pass
+    class RetryMySQLDatabase(RetryOperationalError, MySQLDatabase):
+        pass
+
+    links["database"] = MYSQL_DATABASE
+    db = RetryMySQLDatabase(**links, charset="utf8mb4")
+else:
 
 
 Links["database"] = Config.mysql_db
